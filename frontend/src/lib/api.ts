@@ -1,0 +1,26 @@
+const API_BASE_URL = 'http://localhost:5000/api';
+
+export const apiRequest = async (endpoint: string, method: string = 'GET', body?: any) => {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  
+  const headers: any = {
+    'Content-Type': 'application/json',
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`; // Backend doesn't verify yet but good practice
+  }
+
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'API request failed');
+  }
+
+  return response.json();
+};
