@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const {
   getTeams,
+  getTeamById,
   createTeam,
   updateTeam,
   deleteTeam,
@@ -9,6 +10,6 @@ const {
 
 router.route("/").get(getTeams).post(createTeam);
 
-router.route("/:id").put(updateTeam).delete(deleteTeam);
+router.route("/:id").get(getTeamById).put(updateTeam).delete(deleteTeam);
 
 module.exports = router;

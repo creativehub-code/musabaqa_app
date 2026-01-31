@@ -62,7 +62,16 @@ export default function TeamsPage() {
         {teams.map((t, index) => (
           <div 
             key={t._id} 
-            onClick={() => { setSelectedTeam(t); setFilterGroup('All'); }}
+            onClick={async () => { 
+              setSelectedTeam(t); // Show basic info immediately
+              setFilterGroup('All');
+              try {
+                  const detailedTeam = await apiRequest(`/teams/${t._id}`);
+                  setSelectedTeam(detailedTeam); // Update with full details
+              } catch (e) {
+                  console.error("Failed to load details", e);
+              }
+            }}
             className={`
                 group relative bg-[#1E1B2E] rounded-xl p-4 border border-[#2D283E] 
                 hover:border-purple-500/50 cursor-pointer overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-purple-900/10 hover:-translate-y-1

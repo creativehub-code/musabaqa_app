@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 export const apiRequest = async (endpoint: string, method: string = 'GET', body?: any) => {
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
