@@ -18,8 +18,15 @@ export const apiRequest = async (endpoint: string, method: string = 'GET', body?
   });
 
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.message || 'API request failed');
+    const text = await response.text();
+    console.error('API Error Status:', response.status);
+    console.error('API Error Body:', text);
+    try {
+      const errorData = JSON.parse(text);
+      throw new Error(errorData.message || 'API request failed');
+    } catch (e) {
+      throw new Error(`API Error ${response.status}: ${text.slice(0, 100)}`);
+    }
   }
 
   return response.json();
