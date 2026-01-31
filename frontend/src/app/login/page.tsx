@@ -69,14 +69,7 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div className="mt-6 text-sm text-gray-400 bg-gray-900 p-4 rounded border border-gray-700">
-          <p className="font-semibold text-gray-300 mb-2">Demo Credentials:</p>
-          <div className="grid grid-cols-2 gap-2">
-            <div>Admin:</div><div className="text-purple-300">admin@fest.com / admin123</div>
-            <div>Judge 1:</div><div className="text-purple-300">judge1@fest.com / judge123</div>
-            <div>Judge 2:</div><div className="text-purple-300">judge2@fest.com / judge123</div>
-          </div>
-        </div>
+
       </div>
     </div>
   );
