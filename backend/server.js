@@ -16,8 +16,8 @@ const PORT = process.env.PORT || 5000;
 // Middleware
 app.use(
   cors({
-    origin: ["http://localhost:3000", "https://musabaqa-app-zjxk.vercel.app"],
-    credentials: true,
+    origin: "*", // Allow all origins for debugging
+    credentials: false, // Must be false when origin is "*"
   }),
 );
 app.use(express.json({ limit: "10mb" }));

@@ -1,4 +1,12 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+const getBaseUrl = () => {
+  let url = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+  if (!url.startsWith('http')) {
+    url = `https://${url}`;
+  }
+  return url.replace(/\/$/, ''); // Remove trailing slash if present
+};
+
+const API_BASE_URL = getBaseUrl();
 
 export const apiRequest = async (endpoint: string, method: string = 'GET', body?: any) => {
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -11,7 +19,10 @@ export const apiRequest = async (endpoint: string, method: string = 'GET', body?
     headers['Authorization'] = `Bearer ${token}`; // Backend doesn't verify yet but good practice
   }
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+  const fullUrl = `${API_BASE_URL}${endpoint}`;
+  console.log(`Making request to: ${fullUrl} [${method}]`);
+
+  const response = await fetch(fullUrl, {
     method,
     headers,
     body: body ? JSON.stringify(body) : undefined,
