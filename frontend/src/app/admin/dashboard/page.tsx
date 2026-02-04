@@ -148,40 +148,38 @@ export default function AdminDashboard() {
           </div>
 
           <div className="relative z-10 overflow-hidden rounded-xl border border-gray-800 bg-gray-900/50 backdrop-blur-sm">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-gray-800 text-gray-400 text-xs uppercase tracking-wider bg-gray-900/80">
-                  <th className="p-4 w-24">Rank</th>
-                  <th className="p-4">Team</th>
-                  <th className="p-4 text-right">Points</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-800/50">
+            <div className="w-full">
+              {/* Desktop Header */}
+              <div className="hidden md:flex border-b border-gray-800 text-gray-400 text-xs uppercase tracking-wider bg-gray-900/80">
+                  <div className="p-4 w-24">Rank</div>
+                  <div className="p-4 flex-1">Team</div>
+                  <div className="p-4 text-right">Points</div>
+              </div>
+
+              <div className="divide-y divide-gray-800/50">
                 {teams.length > 0 ? (
                   teams.map((team: any, index: number) => (
-                    <tr key={team._id} className="hover:bg-white/5 transition-colors">
-                      <td className="p-4">
-                        <div className={`
-                          flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm
-                          ${index === 0 ? 'bg-yellow-500/20 text-yellow-500 border border-yellow-500/30' : 
-                            index === 1 ? 'bg-gray-300/20 text-gray-300 border border-gray-300/30' : 
-                            index === 2 ? 'bg-amber-700/20 text-amber-500 border border-amber-700/30' : 
-                            'text-gray-500 bg-gray-800'}
-                        `}>
-                          {index + 1}
-                        </div>
-                      </td>
-                      <td className="p-4 font-medium text-white">{team.name}</td>
-                      <td className="p-4 text-right font-bold text-blue-400">{team.totalScore}</td>
-                    </tr>
+                    <div key={team._id} className="flex items-center justify-between p-4 hover:bg-white/5 transition-colors">
+                      <div className="flex items-center gap-4">
+                          <div className={`
+                            flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm shrink-0
+                            ${index === 0 ? 'bg-yellow-500/20 text-yellow-500 border border-yellow-500/30' : 
+                              index === 1 ? 'bg-gray-300/20 text-gray-300 border border-gray-300/30' : 
+                              index === 2 ? 'bg-amber-700/20 text-amber-500 border border-amber-700/30' : 
+                              'text-white bg-gray-800'}
+                          `}>
+                            {index + 1}
+                          </div>
+                          <span className="font-medium text-white text-lg md:text-base">{team.name}</span>
+                      </div>
+                      <div className="font-bold text-blue-400 text-lg md:text-base">{team.totalScore}</div>
+                    </div>
                   ))
                 ) : (
-                  <tr>
-                     <td colSpan={3} className="p-8 text-center text-gray-500">No teams found.</td>
-                  </tr>
+                  <div className="p-8 text-center text-gray-500">No teams found.</div>
                 )}
-              </tbody>
-            </table>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -200,7 +198,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      <div className="bg-[#111827] border border-gray-800 rounded-2xl shadow-xl overflow-hidden">
+      <div className="bg-[#111827] border border-gray-800 rounded-2xl shadow-xl overflow-hidden mb-20 md:mb-0 max-w-full">
         <div className="p-6 border-b border-gray-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <h2 className="text-xl font-bold text-white flex items-center gap-2">
@@ -211,13 +209,13 @@ export default function AdminDashboard() {
               </h2>
             </div>
             
-            <div className="flex flex-wrap items-center gap-3">
-                <div className="bg-gray-900 p-1 rounded-lg border border-gray-800 flex">
+            <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                <div className="bg-gray-900 p-1 rounded-lg border border-gray-800 flex w-full sm:w-auto overflow-x-auto">
                     {languages.map(lang => (
                         <button
                             key={lang}
                             onClick={() => setSelectedLanguage(lang)}
-                            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap ${
                                 selectedLanguage === lang
                                     ? 'bg-blue-600 text-white shadow-md'
                                     : 'text-gray-400 hover:text-white hover:bg-gray-800'
@@ -227,14 +225,6 @@ export default function AdminDashboard() {
                         </button>
                     ))}
                 </div>
-                
-                <button
-                    onClick={() => setIsProgramsVisible(!isProgramsVisible)}
-                    className="p-2 text-gray-400 hover:text-white bg-gray-900 border border-gray-800 rounded-lg transition-colors"
-                    title={isProgramsVisible ? "Collapse List" : "Expand List"}
-                >
-                    {isProgramsVisible ? <X size={20} /> : <List size={20} />}
-                </button>
             </div>
         </div>
         
@@ -278,35 +268,47 @@ export default function AdminDashboard() {
 
 function ProgramCards({ programs, onStatusUpdate }: { programs: any[], onStatusUpdate: (id: string, status: string) => void }) {
   return (
-    <table className="w-full text-left border-collapse">
-      <thead>
-        <tr className="border-b border-gray-800 text-gray-400 bg-gray-900/50 text-xs uppercase tracking-wider">
-          <th className="p-4 pl-6 w-16">#</th>
-          <th className="p-4">Program Name</th>
-          <th className="p-4">Language</th>
-          <th className="p-4">Group</th>
-          <th className="p-4 text-right pr-6">Status</th>
-        </tr>
-      </thead>
-      <tbody className="divide-y divide-gray-800/50">
+    <div className="w-full">
+        {/* Desktop Header */}
+        <div className="hidden md:grid grid-cols-12 gap-4 border-b border-gray-800 text-gray-400 bg-gray-900/50 text-xs uppercase tracking-wider p-4 pl-6">
+            <div className="col-span-1">#</div>
+            <div className="col-span-4">Program Name</div>
+            <div className="col-span-2">Language</div>
+            <div className="col-span-2">Group</div>
+            <div className="col-span-3 text-right pr-6">Status</div>
+        </div>
+
+      <div className="divide-y divide-gray-800/50">
         {programs.map((program: any, index: number) => (
-          <tr key={program._id} className="hover:bg-white/5 transition-colors group">
-            <td className="p-4 pl-6 text-gray-500 font-mono text-sm">{index + 1}</td>
-            <td className="p-4 font-medium text-white">
-              <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg ${program.status === 'ongoing' ? "bg-yellow-500/10 text-yellow-500" : "bg-blue-500/10 text-blue-500"}`}>
+          <div key={program._id} className="grid grid-cols-1 md:grid-cols-12 gap-2 md:gap-4 p-3 md:p-4 md:pl-6 hover:bg-white/5 transition-colors group items-center">
+            
+            {/* Mobile: Row 1 - Icon + Name */}
+            <div className="col-span-1 md:col-span-5 flex items-center gap-3 w-full">
+                <span className="text-gray-500 font-mono text-sm hidden md:block w-6">{index + 1}</span>
+                <div className={`p-2 rounded-lg shrink-0 ${program.status === 'ongoing' ? "bg-yellow-500/10 text-yellow-500" : "bg-blue-500/10 text-blue-500"}`}>
                     <Award size={18} />
-                  </div>
-                  {program.name}
-              </div>
-            </td>
-            <td className="p-4">
+                </div>
+                 <div className="flex flex-col md:flex-row md:items-center gap-1">
+                    <span className="font-medium text-white">{program.name}</span>
+                    <span className="md:hidden text-xs text-gray-500">{program.language || 'English'} • {program.groupId?.name || 'N/A'}</span>
+                 </div>
+            </div>
+
+            {/* Desktop: Language */}
+             <div className="hidden md:block col-span-2">
                <span className="bg-gray-800 text-gray-300 border border-gray-700 px-2.5 py-1 rounded-full text-xs font-medium">
                     {program.language || 'English'}
                 </span>
-            </td>
-            <td className="p-4 text-gray-400 text-sm">{program.groupId?.name || 'N/A'}</td>
-            <td className="p-4 text-right pr-6">
+            </div>
+
+            {/* Desktop: Group */}
+            <div className="hidden md:block col-span-2 text-gray-400 text-sm">{program.groupId?.name || 'N/A'}</div>
+
+            {/* Status (Both) */}
+            <div className="col-span-1 md:col-span-3 text-right flex justify-between md:justify-end items-center w-full mt-2 md:mt-0">
+               {/* Mobile Rank Display */}
+               <span className="md:hidden text-gray-500 font-mono text-sm">#{index + 1}</span>
+               
                  <div className="relative inline-block">
                     <select 
                         value={program.status || 'upcoming'}
@@ -325,10 +327,10 @@ function ProgramCards({ programs, onStatusUpdate }: { programs: any[], onStatusU
                         <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                     </div>
                  </div>
-            </td>
-          </tr>
+            </div>
+          </div>
         ))}
-      </tbody>
-    </table>
+      </div>
+    </div>
   );
 }

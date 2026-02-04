@@ -433,14 +433,14 @@ export default function ParticipantsPage() {
       )}
 
       {/* List Section Header */}
-      <div className="flex items-center justify-between pt-10">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-10">
          <h2 className="text-2xl font-bold text-white">All Participants <span className="text-gray-500 text-base font-normal">({filteredParticipants.length})</span></h2>
-         <div className="relative">
+         <div className="relative w-full md:w-auto">
              <input 
                 placeholder="Search participants..." 
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="pl-10 pr-4 py-2 rounded-lg bg-[#1E1B2E] border border-[#2D283E] text-white focus:outline-none focus:border-purple-500 w-64 transition-all"
+                className="pl-10 pr-4 py-2 rounded-lg bg-[#1E1B2E] border border-[#2D283E] text-white focus:outline-none focus:border-purple-500 w-full md:w-64 transition-all"
              />
              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
@@ -449,8 +449,11 @@ export default function ParticipantsPage() {
       </div>
 
       {/* Participant List (Table) */}
+      {/* Participant List (Table & Mobile Cards) */}
        <div className="bg-[#1E1B2E] rounded-2xl border border-[#2D283E] overflow-hidden shadow-xl">
-        <table className="w-full text-left border-collapse">
+        
+        {/* Desktop Table View */}
+        <table className="w-full text-left border-collapse hidden md:table">
           <thead>
             <tr className="border-b border-[#2D283E] text-gray-400 bg-[#13111C]">
               <th className="p-4 w-16 font-medium">#</th>
@@ -466,7 +469,6 @@ export default function ParticipantsPage() {
               // Calculate correct absolute number based on pagination
               const absoluteIndex = (currentPage - 1) * itemsPerPage + index;
               const displayIndex = filteredParticipants.length - absoluteIndex; 
-
               return (
                 <ParticipantRow 
                     key={p._id}
@@ -482,13 +484,55 @@ export default function ParticipantsPage() {
                 />
               );
             })}
-            {filteredParticipants.length === 0 && (
+             {filteredParticipants.length === 0 && (
                 <tr>
                     <td colSpan={6} className="p-8 text-center text-gray-500">No participants found.</td>
                 </tr>
             )}
             </tbody>
         </table>
+
+        {/* Mobile Card Grid View */}
+        <div className="md:hidden flex flex-col gap-3 p-1 bg-[#0F0D15]">
+            {paginatedParticipants.map((p) => (
+                <div key={p._id} className="bg-[#1E1B2E] rounded-xl p-3 border border-[#2D283E] flex items-center justify-between shadow-lg relative overflow-hidden">
+                    {/* Content */}
+                    <div className="flex flex-col gap-1 z-10 relative max-w-[60%]">
+                        <span className="text-purple-400 text-xs font-bold tracking-wider uppercase mb-1">
+                            {p.teamId?.name || 'No Team'}
+                        </span>
+                        <h3 className="text-white font-bold text-lg leading-tight truncate">{p.name}</h3>
+                        <p className="text-gray-400 text-sm">Chest #{p.chestNumber}</p>
+                        
+                        <button 
+                            onClick={() => setViewParticipant(p)}
+                            className="mt-3 bg-[#2D283E] hover:bg-purple-600 text-white text-xs font-bold py-2 px-4 rounded-lg transition-colors flex items-center gap-2 w-max"
+                        >
+                            View Profile <Users size={12} />
+                        </button>
+                    </div>
+
+                    {/* Image */}
+                    <div className="w-24 h-24 rounded-xl overflow-hidden border-2 border-[#2D283E] bg-gray-800 shrink-0 z-10">
+                         <img 
+                            src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/participants/${p._id}/photo`} 
+                            alt={p.name} 
+                            loading="lazy"
+                            className="w-full h-full object-cover"
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                        />
+                    </div>
+
+                    {/* Background Decorative Gradient */}
+                    <div className="absolute right-0 top-0 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 pointer-events-none"></div>
+                </div>
+            ))}
+             {filteredParticipants.length === 0 && (
+                <div className="text-center py-10 text-gray-500">No participants found.</div>
+            )}
+        </div>
+        
+        {/* Pagination Controls */}
         
         {/* Pagination Controls */}
         {totalPages > 1 && (

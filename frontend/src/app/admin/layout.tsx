@@ -32,9 +32,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <AdminProvider>
-      <div className="flex min-h-screen bg-gray-950 text-white font-sans">
-        {/* Sidebar */}
-        <aside className="w-64 border-r border-gray-800 bg-gray-900/50 backdrop-blur-xl flex flex-col fixed h-full z-10">
+      <div className="flex min-h-screen bg-gray-950 text-white font-sans pb-20 md:pb-0 overflow-x-hidden">
+        {/* Sidebar - Hidden on Mobile */}
+        <aside className="hidden md:flex w-64 border-r border-gray-800 bg-gray-900/50 backdrop-blur-xl flex-col fixed h-full z-10">
           <div className="p-6 border-b border-gray-800">
              <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-500">
               Admin Panel
@@ -63,8 +63,24 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         </aside>
 
-        {/* Main Content */}
-        <main className="flex-1 ml-64 p-8">
+        {/* Mobile Bottom Navigation */}
+        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-[#0F0D15]/90 backdrop-blur-xl border-t border-gray-800 z-50 px-6 py-4 flex justify-between items-center pb-safe">
+            <MobileNavLink href="/admin/dashboard" icon={<LayoutGrid size={24}/>} label="Dashboard" />
+            <MobileNavLink href="/admin/teams" icon={<Users size={24}/>} label="Teams" />
+            <div className="relative -top-8">
+               <Link href="/admin/programs" className="w-16 h-16 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 flex items-center justify-center text-white shadow-lg shadow-purple-900/50 hover:scale-105 transition-transform">
+                  <Calendar size={28} />
+               </Link>
+            </div>
+             <MobileNavLink href="/admin/participants" icon={<Users size={24}/>} label="People" />
+             <button onClick={handleLogout} className="flex flex-col items-center gap-1 text-gray-500 hover:text-red-400">
+                 <LogOut size={24} />
+                 <span className="text-[10px] font-medium">Logout</span>
+             </button>
+        </div>
+
+        {/* Main Content - Adjusted Margin */}
+        <main className="flex-1 md:ml-64 p-2 md:p-8">
           {children}
         </main>
       </div>
@@ -104,3 +120,15 @@ function NavLink({ href, icon, children }: { href: string; icon: React.ReactNode
     </Link>
   );
 }
+
+function MobileNavLink({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
+    const pathname = usePathname();
+    const isActive = pathname === href;
+  
+    return (
+      <Link href={href} className={`flex flex-col items-center gap-1 transition-colors ${isActive ? 'text-purple-400' : 'text-gray-500 hover:text-gray-300'}`}>
+          {icon}
+          <span className="text-[10px] font-medium">{label}</span>
+      </Link>
+    );
+  }

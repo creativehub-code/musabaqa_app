@@ -123,7 +123,7 @@ export default function TeamsPage() {
 
       {/* Expanded Team Details Section */}
       {selectedTeam && (
-        <div className="mt-8 bg-[#1E1B2E] border border-[#2D283E] rounded-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 shadow-2xl shadow-black/50">
+        <div className="mt-8 bg-[#1E1B2E] border border-[#2D283E] rounded-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 shadow-2xl shadow-black/50 w-full max-w-[100vw] md:max-w-full">
             {/* Header */}
             <div className="p-6 border-b border-[#2D283E] flex flex-col md:flex-row justify-between items-start md:items-center bg-[#13111C] gap-4">
               <div className="flex items-center gap-4">
@@ -169,7 +169,8 @@ export default function TeamsPage() {
             
             <div className="p-0">
               <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
+                  {/* Desktop Table View */}
+                  <table className="w-full text-left border-collapse hidden md:table">
                     <thead className="bg-[#1A1825]">
                       <tr className="border-b border-[#2D283E] text-gray-500 text-xs uppercase tracking-wider font-semibold">
                         <th className="p-5 w-20">#</th>
@@ -187,7 +188,7 @@ export default function TeamsPage() {
                             return gName.trim().toLowerCase() === filterGroup.toLowerCase();
                         })
                         .map((p: any, index: number, arr: any[]) => (
-                        <tr key={p._id} className="hover:bg-[#252236] transition-colors group">
+                        <tr key={p._id || index} className="hover:bg-[#252236] transition-colors group">
                           <td className="p-5 text-gray-500 font-mono text-sm">{arr.length - index}</td>
                           <td className="p-5">
                              <div className="inline-flex items-center justify-center px-2.5 py-1 rounded-lg bg-[#13111C] border border-gray-700 text-purple-300 font-mono text-sm font-bold shadow-sm">
@@ -232,6 +233,58 @@ export default function TeamsPage() {
                       )}
                     </tbody>
                   </table>
+
+                  {/* Mobile Card Grid View */}
+                  <div className="md:hidden flex flex-col gap-3 p-1">
+                        {selectedTeam.participantIds
+                            ?.filter((p: any) => {
+                                if (filterGroup === 'All') return true;
+                                const gName = p?.groupId?.name || '';
+                                return gName.trim().toLowerCase() === filterGroup.toLowerCase();
+                            })
+                            .map((p: any, index: number) => (
+                                <div key={p._id || index} className="bg-[#13111C] rounded-xl p-4 border border-[#2D283E] flex items-center justify-between shadow-sm relative overflow-hidden">
+                                     {/* Content */}
+                                    <div className="flex flex-col gap-1 z-10 relative max-w-[70%]">
+                                         <div className="flex items-center gap-2 mb-1">
+                                            <span className="text-purple-400 font-mono text-xs font-bold bg-[#1E1B2E] px-1.5 py-0.5 rounded border border-[#2D283E]">
+                                                #{p.chestNumber}
+                                            </span>
+                                             <span className={`text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded border ${
+                                                p.groupId?.name === 'Senior' ? 'text-blue-400 border-blue-500/20 bg-blue-500/10' :
+                                                p.groupId?.name === 'Junior' ? 'text-green-400 border-green-500/20 bg-green-500/10' :
+                                                'text-orange-400 border-orange-500/20 bg-orange-500/10'
+                                             }`}>
+                                                {p.groupId?.name || '-'}
+                                            </span>
+                                         </div>
+                                        <h3 className="text-white font-bold text-base leading-tight truncate">{p.name}</h3>
+                                        <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
+                                             <span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
+                                             {p.programs?.length || 0} Events
+                                        </div>
+                                    </div>
+                                    
+                                     {/* Image */}
+                                    <div className="w-16 h-16 rounded-lg overflow-hidden border border-[#2D283E] bg-gray-800 shrink-0 z-10">
+                                         <img 
+                                            src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/participants/${p._id}/photo`} 
+                                            alt={p.name} 
+                                            loading="lazy"
+                                            className="w-full h-full object-cover"
+                                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                        />
+                                    </div>
+                                </div>
+                            ))
+                        }
+                         {(!selectedTeam.participantIds || selectedTeam.participantIds.length === 0) && (
+                            <div className="text-center py-8 text-gray-500 flex flex-col items-center">
+                                 <Users className="opacity-20 mb-2" size={24} />
+                                 <p className="text-sm">No participants found.</p>
+                            </div>
+                        )}
+                  </div>
               </div>
             </div>
         </div>
