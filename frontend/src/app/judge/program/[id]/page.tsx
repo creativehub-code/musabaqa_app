@@ -35,7 +35,9 @@ function MarkingInterface({ programIdParam }: { programIdParam: any }) {
 
     const init = async () => {
       try {
-        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const userStr = sessionStorage.getItem('user') || '{}';
+        const user = JSON.parse(userStr);
+        console.log('[DEBUG] INITIALIZING PROGRAM WITH USER:', user);
         
         // Fetch ALL participants for MVP (Assuming small scale)
         const parts = await apiRequest('/participants');
@@ -63,6 +65,9 @@ function MarkingInterface({ programIdParam }: { programIdParam: any }) {
         
         allMarks.forEach((m: any) => {
             const mJudgeId = typeof m.judgeId === 'object' ? m.judgeId._id : m.judgeId;
+            // Debugging judge ID matches
+            console.log(`[DEBUG] Mark's JudgeID: ${mJudgeId} | Current UserID: ${user._id} | MATCH? ${mJudgeId === user._id}`);
+            
             if (mJudgeId === user._id) {
                 // Determine participant ID structure (populated or string)
                 const pId = typeof m.participantId === 'object' ? m.participantId._id : m.participantId;
@@ -87,11 +92,22 @@ function MarkingInterface({ programIdParam }: { programIdParam: any }) {
   };
 
   const handleSubmit = async () => {
+    // Validation: Ensure every participant has a mark entered
+    const missingMarks = participants.some(p => {
+        const mark = marks[p._id];
+        return mark === undefined || Number.isNaN(mark) || mark.toString().trim() === '';
+    });
+    
+    if (missingMarks) {
+        alert('Please enter marks for all participants before submitting.');
+        return;
+    }
+
     if (!confirm('Are you sure you want to submit all marks? This cannot be undone.')) return;
     
     // In a real app we might get the Judge ID from token/profile.
-    // MVP: Parse from local storage
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    // MVP: Parse from session storage
+    const user = JSON.parse(sessionStorage.getItem('user') || '{}');
     
     // Check for valid ID
     if (!user._id) {
@@ -109,14 +125,9 @@ function MarkingInterface({ programIdParam }: { programIdParam: any }) {
         // For strict enforcement, backend should also reject.
         // Here we just skip re-submitting if UI was disabled, but the state `marks` holds values.
         // We only want to submit NEW marks or allow updating if not locked? 
-        // User said "not allow to change". So we should Filter out already submitted ones?
-        // Actually, if input is disabled, user can't change it. 
-        // But `marks` state is populated with existing values.
-        // If we POST again, backend currently UPDATES. 
-        // We should skip POSTing if it was already in the initial fetch?
-        // Let's assume sending it again is fine as long as value didn't change (which it won't if disabled).
-        // But to be cleaner, we could check.
-        // For now, let's just send.
+        // Here we just skip re-submitting if UI was disabled, but the state `marks` holds values.
+        // We only want to submit NEW marks or allow updating if not locked? 
+        if (lockedIds.has(p._id)) return Promise.resolve(); // Skip already submitted marks for THIS judge
 
         return apiRequest('/marks', 'POST', {
           judgeId: user._id,
@@ -224,7 +235,7 @@ function MarkingInterface({ programIdParam }: { programIdParam: any }) {
                                   'border-gray-700 focus:border-purple-500 focus:ring-1 focus:ring-purple-500'}
                             `}
                             placeholder="-"
-                            value={marks[p._id] || ''}
+                            value={marks[p._id] !== undefined ? marks[p._id] : ''}
                             onChange={(e) => handleMarkChange(p._id, e.target.value)}
                         />
                         <span className="text-xs text-gray-500">/ {program?.maxMarks}</span>

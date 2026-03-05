@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { apiRequest } from '@/lib/api';
 import { FileDown, RefreshCw, Search, Trophy, CheckCircle, Clock, ChevronDown, Check, Filter } from 'lucide-react';
 
@@ -17,8 +17,22 @@ export default function MarksReviewPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilterLang, setSelectedFilterLang] = useState('All');
 
+  // Settings State
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [settings, setSettings] = useState({ firstPlacePoints: 5, secondPlacePoints: 3, thirdPlacePoints: 1 });
+  const [savingSettings, setSavingSettings] = useState(false);
+
   useEffect(() => {
     apiRequest('/programs').then(setPrograms).catch(console.error);
+    apiRequest('/settings').then(data => {
+        if(data) {
+           setSettings({
+               firstPlacePoints: data.firstPlacePoints || 5,
+               secondPlacePoints: data.secondPlacePoints || 3,
+               thirdPlacePoints: data.thirdPlacePoints || 1
+           });
+        }
+    }).catch(console.error);
     
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -46,6 +60,48 @@ export default function MarksReviewPage() {
     finally { setLoading(false); }
   };
 
+  const groupedMarks = useMemo(() => {
+    if (!marks.length) return [];
+    
+    const participantMap: Record<string, any> = {};
+    
+    // 1. Group by participant
+    marks.forEach(m => {
+        const pId = m.participantId?._id;
+        if (!pId) return;
+
+        if (!participantMap[pId]) {
+            participantMap[pId] = {
+                participant: m.participantId,
+                judgesMarks: [],
+                totalScore: 0,
+                rank: null
+            };
+        }
+        
+        participantMap[pId].judgesMarks.push({
+            judgeName: m.judgeId?.name,
+            judgeInitial: m.judgeId?.name?.charAt(0),
+            mark: m.marksGiven
+        });
+        participantMap[pId].totalScore += m.marksGiven || 0;
+    });
+
+    // 2. Convert to array and sort by total score descending
+    const sortedParticipants = Object.values(participantMap).sort((a, b) => b.totalScore - a.totalScore);
+
+    // 3. Assign true ranks (handling ties)
+    let currentRank = 1;
+    for (let i = 0; i < sortedParticipants.length; i++) {
+        if (i > 0 && sortedParticipants[i].totalScore < sortedParticipants[i - 1].totalScore) {
+            currentRank = i + 1;
+        }
+        sortedParticipants[i].rank = currentRank;
+    }
+
+    return sortedParticipants;
+  }, [marks]);
+
   const handleCalculate = async () => {
     if (!confirm('This will recalculate scores for all teams based on these marks. Continue?')) return;
     try {
@@ -57,11 +113,12 @@ export default function MarksReviewPage() {
   };
 
   const downloadCSV = () => {
-     if (!marks.length) return;
-     const headers = "Participant,Chest No,Team,Judge,Marks,Status";
-     const rows = marks.map(m => 
-        `"${m.participantId?.name || ''}","${m.participantId?.chestNumber || ''}","${m.participantId?.teamId?.name || ''}","${m.judgeId?.name || ''}",${m.marksGiven},Submitted`
-     ).join('\n');
+     if (!groupedMarks.length) return;
+     const headers = "Participant,Chest No,Team,Total Score,Judges Breakdown";
+     const rows = groupedMarks.map(m => {
+        const breakdown = m.judgesMarks.map((jm: any) => `${jm.judgeName}: ${jm.mark}`).join(" | ");
+        return `"${m.participant?.name || ''}","${m.participant?.chestNumber || ''}","${m.participant?.teamId?.name || ''}",${m.totalScore},"${breakdown}"`;
+     }).join('\n');
      
      const csvContent = "data:text/csv;charset=utf-8," + headers + '\n' + rows;
      const encodedUri = encodeURI(csvContent);
@@ -70,6 +127,19 @@ export default function MarksReviewPage() {
      link.setAttribute("download", `marks_export_${selectedProgram}.csv`);
      document.body.appendChild(link);
      link.click();
+  };
+
+  const saveSettings = async () => {
+      setSavingSettings(true);
+      try {
+          await apiRequest('/settings', 'PUT', settings);
+          setIsSettingsOpen(false);
+          alert('Points Configuration Saved!');
+      } catch (e: any) {
+          alert(e.message);
+      } finally {
+          setSavingSettings(false);
+      }
   };
 
   const getLangColor = (lang: string) => {
@@ -93,9 +163,18 @@ export default function MarksReviewPage() {
   return (
     <div className="space-y-8 pb-20 animate-in fade-in duration-500">
         {/* Header */}
-        <div>
-           <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-500">Review Marks & Reports</h2>
-           <p className="text-gray-400 mt-1">Verify judge submissions and publish final scores.</p>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+               <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-500">Review Marks & Reports</h2>
+               <p className="text-gray-400 mt-1">Verify judge submissions and publish final scores.</p>
+            </div>
+            <button 
+                onClick={() => setIsSettingsOpen(true)}
+                className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all border border-gray-700 shadow-lg"
+            >
+                <Trophy size={16} />
+                Configure Prize Points
+            </button>
         </div>
         
         {/* Controls Section */}
@@ -217,9 +296,9 @@ export default function MarksReviewPage() {
                         <thead className="bg-[#1A1825] border-b border-[#2D283E]">
                             <tr>
                                 <th className="p-5 text-xs font-bold uppercase tracking-wider text-gray-500">Participant</th>
-                                <th className="p-5 text-xs font-bold uppercase tracking-wider text-gray-500 text-center">Marks Given</th>
-                                <th className="p-5 text-xs font-bold uppercase tracking-wider text-gray-500">Judge</th>
-                                <th className="p-5 text-xs font-bold uppercase tracking-wider text-gray-500 text-right">Status</th>
+                                <th className="p-5 text-xs font-bold uppercase tracking-wider text-gray-500 w-1/3">Judges' Breakdown</th>
+                                <th className="p-5 text-xs font-bold uppercase tracking-wider text-gray-500 text-center">Total Score</th>
+                                <th className="p-5 text-xs font-bold uppercase tracking-wider text-gray-500 text-right">Rank</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-[#2D283E]">
@@ -232,38 +311,59 @@ export default function MarksReviewPage() {
                                         </div>
                                     </td>
                                 </tr>
-                            ) : marks.length > 0 ? (
-                                marks.map(m => (
-                                    <tr key={m._id} className="hover:bg-[#252236] transition-colors group">
+                            ) : groupedMarks.length > 0 ? (
+                                groupedMarks.map(m => (
+                                    <tr key={m.participant._id} className="hover:bg-[#252236] transition-colors group">
                                         <td className="p-5">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-10 h-10 rounded-lg bg-[#13111C] border border-gray-700 flex items-center justify-center text-sm font-bold text-gray-400 font-mono">
-                                                    {m.participantId?.chestNumber}
+                                                    {m.participant?.chestNumber}
                                                 </div>
                                                 <div>
-                                                    <div className="font-bold text-white group-hover:text-purple-300 transition-colors">{m.participantId?.name}</div>
-                                                    <div className="text-xs text-gray-500">{m.participantId?.teamId?.name || 'No Team'}</div>
+                                                    <div className="font-bold text-white group-hover:text-purple-300 transition-colors">{m.participant?.name}</div>
+                                                    <div className="text-xs text-gray-500">{m.participant?.teamId?.name || 'No Team'}</div>
                                                 </div>
+                                            </div>
+                                        </td>
+                                        <td className="p-5">
+                                            <div className="flex flex-wrap gap-2">
+                                                {m.judgesMarks.map((jm: any, idx: number) => (
+                                                    <div key={idx} className="flex items-center gap-1.5 bg-[#13111C] border border-gray-700 rounded-lg px-2.5 py-1.5">
+                                                        <div className="w-5 h-5 rounded-full bg-gray-800 flex items-center justify-center text-[9px] text-gray-400 font-bold">
+                                                            {jm.judgeInitial}
+                                                        </div>
+                                                        <span className="text-xs text-gray-300 font-medium">{jm.judgeName}:</span>
+                                                        <span className="text-sm font-bold text-yellow-500 font-mono">{jm.mark}</span>
+                                                    </div>
+                                                ))}
                                             </div>
                                         </td>
                                         <td className="p-5 text-center">
-                                            <span className="inline-block px-4 py-1 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 font-mono text-lg font-bold">
-                                                {m.marksGiven}
+                                            <span className="inline-block px-4 py-1.5 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 font-mono text-xl font-black">
+                                                {m.totalScore}
                                             </span>
-                                        </td>
-                                        <td className="p-5">
-                                            <div className="flex items-center gap-2 text-gray-400">
-                                                <div className="w-6 h-6 rounded-full bg-gray-700 flex items-center justify-center text-[10px]">
-                                                    {m.judgeId?.name?.charAt(0)}
-                                                </div>
-                                                {m.judgeId?.name}
-                                            </div>
                                         </td>
                                         <td className="p-5 text-right">
-                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-500/10 text-green-400 text-xs font-medium border border-green-500/20">
-                                                <CheckCircle size={12} />
-                                                Submitted
-                                            </span>
+                                            {m.rank === 1 && (
+                                                <span className="inline-flex items-center justify-center px-4 py-1.5 rounded-full bg-yellow-500/20 text-yellow-400 font-bold border border-yellow-500/30 text-sm gap-2">
+                                                    <Trophy size={14} /> 1st Place
+                                                </span>
+                                            )}
+                                            {m.rank === 2 && (
+                                                <span className="inline-flex items-center justify-center px-4 py-1.5 rounded-full bg-gray-300/20 text-gray-300 font-bold border border-gray-400/30 text-sm gap-2">
+                                                    <Trophy size={14} /> 2nd Place
+                                                </span>
+                                            )}
+                                            {m.rank === 3 && (
+                                                <span className="inline-flex items-center justify-center px-4 py-1.5 rounded-full bg-orange-500/20 text-orange-400 font-bold border border-orange-500/30 text-sm gap-2">
+                                                    <Trophy size={14} /> 3rd Place
+                                                </span>
+                                            )}
+                                            {m.rank > 3 && (
+                                                <span className="text-gray-500 font-bold font-mono">
+                                                    #{m.rank}
+                                                </span>
+                                            )}
                                         </td>
                                     </tr>
                                 ))
@@ -279,6 +379,67 @@ export default function MarksReviewPage() {
                             )}
                         </tbody>
                     </table>
+                </div>
+            </div>
+        )}
+
+        {/* Settings Modal */}
+        {isSettingsOpen && (
+            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in">
+                <div className="bg-[#1E1B2E] border border-gray-800 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+                    <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                        <Trophy size={20} className="text-purple-400" />
+                        Configure Position Points
+                    </h3>
+                    <p className="text-sm text-gray-400 mb-6">
+                        Set how many points are awarded to the 1st, 2nd, and 3rd place winners of a program. These points are added to their total score.
+                    </p>
+
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-400 mb-1">1st Place Points</label>
+                            <input 
+                                type="number" 
+                                className="w-full bg-[#13111C] border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-yellow-500 transition-colors"
+                                value={settings.firstPlacePoints}
+                                onChange={(e) => setSettings({...settings, firstPlacePoints: Number(e.target.value) || 0})}
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-400 mb-1">2nd Place Points</label>
+                            <input 
+                                type="number" 
+                                className="w-full bg-[#13111C] border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-gray-400 transition-colors"
+                                value={settings.secondPlacePoints}
+                                onChange={(e) => setSettings({...settings, secondPlacePoints: Number(e.target.value) || 0})}
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-400 mb-1">3rd Place Points</label>
+                            <input 
+                                type="number" 
+                                className="w-full bg-[#13111C] border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-700 transition-colors"
+                                value={settings.thirdPlacePoints}
+                                onChange={(e) => setSettings({...settings, thirdPlacePoints: Number(e.target.value) || 0})}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 mt-8">
+                        <button 
+                            onClick={() => setIsSettingsOpen(false)}
+                            className="flex-1 py-3 bg-transparent border border-gray-700 hover:bg-gray-800 rounded-xl text-white font-medium transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button 
+                            onClick={saveSettings}
+                            disabled={savingSettings}
+                            className="flex-1 py-3 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 rounded-xl text-white font-bold transition-all shadow-lg"
+                        >
+                            {savingSettings ? 'Saving...' : 'Save Configuration'}
+                        </button>
+                    </div>
                 </div>
             </div>
         )}

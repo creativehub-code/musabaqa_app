@@ -2,7 +2,8 @@ const Admin = require("../models/Admin");
 const Judge = require("../models/Judge");
 
 const login = async (req, res) => {
-  const { email, password } = req.body;
+  let { email, password } = req.body;
+  if (email) email = email.trim();
 
   try {
     // 1. Admin Check (Database)
@@ -17,7 +18,7 @@ const login = async (req, res) => {
     }
 
     // 2. Judge Check (Database)
-    const judge = await Judge.findOne({ email });
+    const judge = await Judge.findOne({ email }).populate("judgeGroupId");
     if (judge && judge.password === password) {
       return res.json({
         token: `token-${judge._id}`,
@@ -26,7 +27,10 @@ const login = async (req, res) => {
           _id: judge._id,
           email: judge.email,
           name: judge.name,
-          assignedPrograms: judge.assignedPrograms,
+          assignedPrograms: judge.judgeGroupId
+            ? judge.judgeGroupId.assignedPrograms
+            : [],
+          judgeGroupId: judge.judgeGroupId ? judge.judgeGroupId._id : null,
         },
       });
     }
@@ -46,7 +50,8 @@ const setup = async (req, res) => {
         .json({ message: "Setup already completed. Admin exists." });
     }
 
-    const { name, email, password } = req.body;
+    let { name, email, password } = req.body;
+    if (email) email = email.trim();
     const admin = await Admin.create({ name, email, password }); // Ideally hash password here
 
     res.status(201).json({ message: "Admin created successfully", admin });

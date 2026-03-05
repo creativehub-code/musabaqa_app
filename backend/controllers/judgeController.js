@@ -13,11 +13,35 @@ const getJudges = async (req, res) => {
   }
 };
 
+// @desc    Get current logged in judge profile
+// @route   GET /api/judges/me/:id
+// @access  Public (Should be protected)
+const getMe = async (req, res) => {
+  try {
+    const judge = await Judge.findById(req.params.id).populate("judgeGroupId");
+    if (!judge) {
+      return res.status(404).json({ message: "Judge not found" });
+    }
+    res.json({
+      _id: judge._id,
+      name: judge.name,
+      email: judge.email,
+      assignedPrograms: judge.judgeGroupId
+        ? judge.judgeGroupId.assignedPrograms
+        : [],
+      judgeGroupId: judge.judgeGroupId ? judge.judgeGroupId._id : null,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // @desc    Create a new judge
 // @route   POST /api/judges
 // @access  Public (should be Admin)
 const createJudge = async (req, res) => {
-  const { name, email, password, assignedProgramId } = req.body;
+  let { name, email, password, assignedProgramIds } = req.body;
+  if (email) email = email.trim();
 
   try {
     const judgeExists = await Judge.findOne({ email });
@@ -26,17 +50,11 @@ const createJudge = async (req, res) => {
       return res.status(400).json({ message: "Judge already exists" });
     }
 
-    // Assign program if provided
-    let assignedPrograms = [];
-    if (assignedProgramId) {
-      assignedPrograms.push(assignedProgramId);
-    }
-
     const judge = await Judge.create({
       name,
       email,
       password, // Plaintext for MVP as requested
-      assignedPrograms,
+      assignedPrograms: assignedProgramIds || [],
     });
 
     if (judge) {
@@ -74,6 +92,7 @@ const deleteJudge = async (req, res) => {
 
 module.exports = {
   getJudges,
+  getMe,
   createJudge,
   deleteJudge,
 };

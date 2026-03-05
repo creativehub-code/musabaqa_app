@@ -6,10 +6,11 @@ import { X, Trash2, Shield, Users, Trophy, Plus, ChevronRight } from 'lucide-rea
 import { useAdminData } from '../AdminContext';
 
 export default function TeamsPage() {
-  const { teams, refreshTeams } = useAdminData();
+  const { teams, participants, refreshTeams } = useAdminData();
   const [name, setName] = useState('');
   const [selectedTeam, setSelectedTeam] = useState<any>(null);
   const [filterGroup, setFilterGroup] = useState('All');
+  const [displayLimit, setDisplayLimit] = useState(20);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,6 +30,19 @@ export default function TeamsPage() {
       if (selectedTeam?._id === id) setSelectedTeam(null);
     } catch (e: any) { alert(e.message); }
   };
+
+  const teamParticipants = participants.filter((p: any) => 
+      (p.teamId?._id || p.teamId) === selectedTeam?._id
+  );
+
+  const filteredParticipants = teamParticipants.filter((p: any) => {
+      if (filterGroup === 'All') return true;
+      const gName = p?.groupId?.name || '';
+      return gName.trim().toLowerCase() === filterGroup.toLowerCase();
+  });
+
+  const displayedParticipants = filteredParticipants.slice(0, displayLimit);
+  const hasMoreParticipants = filteredParticipants.length > displayLimit;
 
   return (
     <div className="space-y-10 pb-20 animate-in fade-in duration-500">
@@ -62,15 +76,10 @@ export default function TeamsPage() {
         {teams.map((t, index) => (
           <div 
             key={t._id} 
-            onClick={async () => { 
+            onClick={() => { 
               setSelectedTeam(t); // Show basic info immediately
               setFilterGroup('All');
-              try {
-                  const detailedTeam = await apiRequest(`/teams/${t._id}`);
-                  setSelectedTeam(detailedTeam); // Update with full details
-              } catch (e) {
-                  console.error("Failed to load details", e);
-              }
+              setDisplayLimit(20);
             }}
             className={`
                 group relative bg-[#1E1B2E] rounded-xl p-4 border border-[#2D283E] 
@@ -133,7 +142,7 @@ export default function TeamsPage() {
                  <div>
                     <h2 className="text-2xl font-bold text-white mb-1">{selectedTeam.name}</h2>
                     <div className="flex items-center gap-3 text-sm">
-                        <span className="text-gray-400 font-medium">{selectedTeam.participantIds?.length || 0} Members</span>
+                        <span className="text-gray-400 font-medium">{teamParticipants.length} Members</span>
                         <div className="w-1 h-1 rounded-full bg-gray-600"></div>
                         <span className="text-purple-400 font-bold">{selectedTeam.totalScore} Points</span>
                     </div>
@@ -146,7 +155,7 @@ export default function TeamsPage() {
                    {['All', 'Senior', 'Junior', 'SubJunior'].map(filter => (
                       <button
                         key={filter}
-                        onClick={() => setFilterGroup(filter)}
+                        onClick={() => { setFilterGroup(filter); setDisplayLimit(20); }}
                         className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
                            filterGroup === filter 
                            ? 'bg-purple-600 text-white shadow-lg' 
@@ -181,109 +190,121 @@ export default function TeamsPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#2D283E]">
-                      {selectedTeam.participantIds
-                        ?.filter((p: any) => {
-                            if (filterGroup === 'All') return true;
-                            const gName = p?.groupId?.name || '';
-                            return gName.trim().toLowerCase() === filterGroup.toLowerCase();
-                        })
-                        .map((p: any, index: number, arr: any[]) => (
-                        <tr key={p._id || index} className="hover:bg-[#252236] transition-colors group">
-                          <td className="p-5 text-gray-500 font-mono text-sm">{arr.length - index}</td>
-                          <td className="p-5">
-                             <div className="inline-flex items-center justify-center px-2.5 py-1 rounded-lg bg-[#13111C] border border-gray-700 text-purple-300 font-mono text-sm font-bold shadow-sm">
-                                {p.chestNumber}
-                             </div>
-                          </td>
-                          <td className="p-5">
-                             <span className="font-bold text-white text-base group-hover:text-purple-300 transition-colors">{p.name}</span>
-                          </td>
-                          <td className="p-5">
-                             <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${
-                                p.groupId?.name === 'Senior' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
-                                p.groupId?.name === 'Junior' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
-                                'bg-orange-500/10 text-orange-400 border-orange-500/20'
-                             }`}>
-                                {p.groupId?.name || '-'}
-                             </span>
-                          </td>
-                          <td className="p-5">
-                             {p.programs?.length > 0 ? (
-                                <div className="flex items-center gap-2 text-gray-400 text-sm">
-                                    <span className="w-2 h-2 rounded-full bg-purple-500"></span>
-                                    {p.programs.length} Events Registered
-                                </div>
-                             ) : (
-                                <span className="text-gray-600 text-sm italic">No events</span>
-                             )}
-                          </td>
-                        </tr>
-                      ))}
-                      {(!selectedTeam.participantIds || selectedTeam.participantIds.length === 0) && (
-                         <tr>
-                            <td colSpan={5} className="p-16 text-center text-gray-500">
-                               <div className="flex flex-col items-center justify-center gap-3">
-                                   <div className="p-4 rounded-full bg-[#13111C] border border-[#2D283E]">
-                                       <Users className="opacity-20" size={32} />
+                         <>
+                          {displayedParticipants.map((p: any, index: number) => (
+                            <tr key={p._id || index} className="hover:bg-[#252236] transition-colors group">
+                              <td className="p-5 text-gray-500 font-mono text-sm">{filteredParticipants.length - index}</td>
+                              <td className="p-5">
+                                 <div className="inline-flex items-center justify-center px-2.5 py-1 rounded-lg bg-[#13111C] border border-gray-700 text-purple-300 font-mono text-sm font-bold shadow-sm">
+                                    {p.chestNumber}
+                                 </div>
+                              </td>
+                              <td className="p-5">
+                                 <span className="font-bold text-white text-base group-hover:text-purple-300 transition-colors">{p.name}</span>
+                              </td>
+                              <td className="p-5">
+                                 <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${
+                                    p.groupId?.name === 'Senior' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
+                                    p.groupId?.name === 'Junior' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
+                                    'bg-orange-500/10 text-orange-400 border-orange-500/20'
+                                 }`}>
+                                    {p.groupId?.name || '-'}
+                                 </span>
+                              </td>
+                              <td className="p-5">
+                                 {p.programs?.length > 0 ? (
+                                    <div className="flex items-center gap-2 text-gray-400 text-sm">
+                                        <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+                                        {p.programs.length} Events Registered
+                                    </div>
+                                 ) : (
+                                    <span className="text-gray-600 text-sm italic">No events</span>
+                                 )}
+                              </td>
+                            </tr>
+                          ))}
+                          {hasMoreParticipants && (
+                             <tr>
+                                <td colSpan={5} className="p-6 text-center">
+                                   <button 
+                                      onClick={() => setDisplayLimit(prev => prev + 20)}
+                                      className="px-6 py-2 bg-purple-600/20 text-purple-400 hover:bg-purple-600/30 rounded-lg font-medium transition-colors border border-purple-500/20"
+                                   >
+                                      Load More
+                                   </button>
+                                </td>
+                             </tr>
+                          )}
+                          {filteredParticipants.length === 0 && (
+                             <tr>
+                                <td colSpan={5} className="p-16 text-center text-gray-500">
+                                   <div className="flex flex-col items-center justify-center gap-3">
+                                       <div className="p-4 rounded-full bg-[#13111C] border border-[#2D283E]">
+                                           <Users className="opacity-20" size={32} />
+                                       </div>
+                                       <p>No participants found in this group.</p>
                                    </div>
-                                   <p>No participants found in this group.</p>
-                               </div>
-                            </td>
-                         </tr>
-                      )}
+                                </td>
+                             </tr>
+                          )}
+                         </>
                     </tbody>
                   </table>
 
                   {/* Mobile Card Grid View */}
                   <div className="md:hidden flex flex-col gap-3 p-1">
-                        {selectedTeam.participantIds
-                            ?.filter((p: any) => {
-                                if (filterGroup === 'All') return true;
-                                const gName = p?.groupId?.name || '';
-                                return gName.trim().toLowerCase() === filterGroup.toLowerCase();
-                            })
-                            .map((p: any, index: number) => (
-                                <div key={p._id || index} className="bg-[#13111C] rounded-xl p-4 border border-[#2D283E] flex items-center justify-between shadow-sm relative overflow-hidden">
-                                     {/* Content */}
-                                    <div className="flex flex-col gap-1 z-10 relative max-w-[70%]">
-                                         <div className="flex items-center gap-2 mb-1">
-                                            <span className="text-purple-400 font-mono text-xs font-bold bg-[#1E1B2E] px-1.5 py-0.5 rounded border border-[#2D283E]">
-                                                #{p.chestNumber}
-                                            </span>
-                                             <span className={`text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded border ${
-                                                p.groupId?.name === 'Senior' ? 'text-blue-400 border-blue-500/20 bg-blue-500/10' :
-                                                p.groupId?.name === 'Junior' ? 'text-green-400 border-green-500/20 bg-green-500/10' :
-                                                'text-orange-400 border-orange-500/20 bg-orange-500/10'
-                                             }`}>
-                                                {p.groupId?.name || '-'}
-                                            </span>
-                                         </div>
-                                        <h3 className="text-white font-bold text-base leading-tight truncate">{p.name}</h3>
-                                        <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
-                                             <span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
-                                             {p.programs?.length || 0} Events
+                          <>
+                            {displayedParticipants.map((p: any, index: number) => (
+                                    <div key={p._id || index} className="bg-[#13111C] rounded-xl p-4 border border-[#2D283E] flex items-center justify-between shadow-sm relative overflow-hidden">
+                                         {/* Content */}
+                                        <div className="flex flex-col gap-1 z-10 relative max-w-[70%]">
+                                             <div className="flex items-center gap-2 mb-1">
+                                                <span className="text-purple-400 font-mono text-xs font-bold bg-[#1E1B2E] px-1.5 py-0.5 rounded border border-[#2D283E]">
+                                                    #{p.chestNumber}
+                                                </span>
+                                                 <span className={`text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded border ${
+                                                    p.groupId?.name === 'Senior' ? 'text-blue-400 border-blue-500/20 bg-blue-500/10' :
+                                                    p.groupId?.name === 'Junior' ? 'text-green-400 border-green-500/20 bg-green-500/10' :
+                                                    'text-orange-400 border-orange-500/20 bg-orange-500/10'
+                                                 }`}>
+                                                    {p.groupId?.name || '-'}
+                                                </span>
+                                             </div>
+                                            <h3 className="text-white font-bold text-base leading-tight truncate">{p.name}</h3>
+                                            <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
+                                                 <span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
+                                                 {p.programs?.length || 0} Events
+                                            </div>
+                                        </div>
+                                        
+                                         {/* Image */}
+                                        <div className="w-16 h-16 rounded-lg overflow-hidden border border-[#2D283E] bg-gray-800 shrink-0 z-10">
+                                             <img 
+                                                src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/participants/${p._id}/photo`} 
+                                                alt={p.name} 
+                                                loading="lazy"
+                                                className="w-full h-full object-cover"
+                                                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                            />
                                         </div>
                                     </div>
-                                    
-                                     {/* Image */}
-                                    <div className="w-16 h-16 rounded-lg overflow-hidden border border-[#2D283E] bg-gray-800 shrink-0 z-10">
-                                         <img 
-                                            src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/participants/${p._id}/photo`} 
-                                            alt={p.name} 
-                                            loading="lazy"
-                                            className="w-full h-full object-cover"
-                                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                                        />
-                                    </div>
+                                ))
+                            }
+                             {hasMoreParticipants && (
+                                <button 
+                                  onClick={() => setDisplayLimit(prev => prev + 20)}
+                                  className="w-full mt-2 py-3 bg-purple-600/20 text-purple-400 hover:bg-purple-600/30 rounded-xl font-medium transition-colors border border-purple-500/20"
+                                >
+                                  Load More
+                                </button>
+                             )}
+                             {filteredParticipants.length === 0 && (
+                                <div className="text-center py-8 text-gray-500 flex flex-col items-center">
+                                     <Users className="opacity-20 mb-2" size={24} />
+                                     <p className="text-sm">No participants found.</p>
                                 </div>
-                            ))
-                        }
-                         {(!selectedTeam.participantIds || selectedTeam.participantIds.length === 0) && (
-                            <div className="text-center py-8 text-gray-500 flex flex-col items-center">
-                                 <Users className="opacity-20 mb-2" size={24} />
-                                 <p className="text-sm">No participants found.</p>
-                            </div>
-                        )}
+                            )}
+                          </>
                   </div>
               </div>
             </div>

@@ -7,6 +7,7 @@ import { ChevronRight, Globe, Layers, Search, Filter, ChevronDown, Check } from 
 
 export default function JudgeDashboard() {
   const [programs, setPrograms] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedLanguage, setSelectedLanguage] = useState('');
   const [selectedGroup, setSelectedGroup] = useState('');
@@ -15,13 +16,34 @@ export default function JudgeDashboard() {
   const [isGroupOpen, setIsGroupOpen] = useState(false);
 
   useEffect(() => {
-    // Ideally fetch assigned programs, but for MVP fetching all
     const fetchPrograms = async () => {
       try {
         const data = await apiRequest('/programs');
-        setPrograms(data);
+        const userData = sessionStorage.getItem('user');
+        let assignedIds: string[] = [];
+        
+        if (userData) {
+          const user = JSON.parse(userData);
+          if (user._id) {
+            // Fetch live data instead of using stale local storage
+            const liveJudgeData = await apiRequest(`/judges/me/${user._id}`);
+            assignedIds = (liveJudgeData.assignedPrograms || []).map((p: any) => typeof p === 'object' ? p._id : p);
+            
+            // Optionally update session storage so other places might benefit
+            sessionStorage.setItem('user', JSON.stringify({
+              ...user,
+              assignedPrograms: liveJudgeData.assignedPrograms
+            }));
+          }
+        }
+        
+        // Filter programs to only those assigned to the judge
+        const filteredData = data.filter((p: any) => assignedIds.includes(p._id));
+        setPrograms(filteredData);
+        setLoading(false);
       } catch (error) {
         console.error(error);
+        setLoading(false);
       }
     };
     fetchPrograms();
@@ -146,8 +168,14 @@ export default function JudgeDashboard() {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {filteredPrograms.map((program) => (
+      {loading ? (
+        <div className="text-gray-500 text-center py-8 flex flex-col items-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mb-4"></div>
+            Loading assigned programs...
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {filteredPrograms.map((program) => (
           <Link 
             key={program._id} 
             href={`/judge/program/${program._id}`}
@@ -213,7 +241,8 @@ export default function JudgeDashboard() {
                 </button>
             </div>
         )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

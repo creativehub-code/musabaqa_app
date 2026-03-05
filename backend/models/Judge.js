@@ -15,12 +15,10 @@ const judgeSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    assignedPrograms: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Program",
-      },
-    ],
+    judgeGroupId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "JudgeGroup",
+    },
   },
   {
     timestamps: true,

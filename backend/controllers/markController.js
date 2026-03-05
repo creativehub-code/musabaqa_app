@@ -3,6 +3,8 @@ const Participant = require("../models/Participant");
 const Team = require("../models/Team");
 const Group = require("../models/Group");
 const Program = require("../models/Program");
+const Setting = require("../models/Setting");
+const ProgramResult = require("../models/ProgramResult");
 
 // @desc    Submit or Updates marks (Judge)
 // @route   POST /api/marks
@@ -11,7 +13,9 @@ const submitMark = async (req, res) => {
   try {
     const { judgeId, programId, participantId, marksGiven } = req.body;
 
-    // Check if locked/submitted? Logic can be added here.
+    if (!judgeId || !programId || !participantId) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
 
     let markEntry = await JudgeMark.findOne({
       judgeId,
@@ -62,51 +66,133 @@ const getMarksByProgram = async (req, res) => {
 const calculateScores = async (req, res) => {
   try {
     const { programId } = req.params;
-    // This is a simplified calculation trigger.
-    // In a real app, we might recalculate everything or just this program.
 
     // 1. Get all marks for this program
     const marks = await JudgeMark.find({ programId });
 
-    // 2. Aggregate scores per participant
-    const participantScores = {};
+    if (marks.length === 0) {
+      return res
+        .status(400)
+        .json({ message: "No marks found for this program to verify." });
+    }
+
+    // 2. Clear old program results for this program if re-verifying
+    await ProgramResult.deleteMany({ programId });
+
+    // 3. Aggregate marks for each participant in THIS program
+    const programScores = {};
     marks.forEach((mark) => {
-      if (!participantScores[mark.participantId]) {
-        participantScores[mark.participantId] = 0;
-      }
-      participantScores[mark.participantId] += mark.marksGiven;
+      const pId = mark.participantId.toString();
+      if (!programScores[pId]) programScores[pId] = 0;
+      programScores[pId] += mark.marksGiven || 0;
     });
 
-    // 3. Update Participants Total Score (Resetting and re-adding is safer but complex for MVP)
-    // For MVP, lets assume we just "Add" to total score? No, that duplicates if run twice.
-    // Strategy: We should probably store "ProgramScore" separately or just update Participant.totalScore
-    // correctly by recalculating ALL scores for that participant.
+    // 4. Sort participants by total marks in descending order
+    const sortedParticipants = Object.keys(programScores).sort(
+      (a, b) => programScores[b] - programScores[a],
+    );
 
-    // Better MVP Strategy:
-    // Participant.totalScore = Sum(All JudgeMarks for this participant) + PositionPoints.
-    // We can run a global recalculation for affected applicants.
+    // 5. Fetch Points Settings
+    let settings = await Setting.findOne();
+    if (!settings) {
+      settings = {
+        firstPlacePoints: 5,
+        secondPlacePoints: 3,
+        thirdPlacePoints: 1,
+      };
+    }
 
-    for (const [partId, score] of Object.entries(participantScores)) {
-      await Participant.findByIdAndUpdate(partId, { totalScore: score }); // This overwrites logic if they have multiple programs?
-      // If checking multiple programs, we need to sum ALL marks for participant.
+    // 6. Assign Positions and Points (Handling exact ties)
+    const positionAwards = [];
+    let currentPosition = 1;
+    let rankPoints = settings.firstPlacePoints;
 
-      // Re-query all marks for this participant across ALL programs
+    for (let i = 0; i < sortedParticipants.length; i++) {
+      const pId = sortedParticipants[i];
+      const currentScore = programScores[pId];
+
+      // Change position only if score is less than the previous person
+      if (i > 0) {
+        const prevPId = sortedParticipants[i - 1];
+        if (currentScore < programScores[prevPId]) {
+          currentPosition = i + 1; // 0-indexed to 1-indexed true rank (e.g., 1, 1, 3)
+        }
+      }
+
+      // Only top 3 true positions get points
+      if (currentPosition === 1) rankPoints = settings.firstPlacePoints;
+      else if (currentPosition === 2) rankPoints = settings.secondPlacePoints;
+      else if (currentPosition === 3) rankPoints = settings.thirdPlacePoints;
+      else rankPoints = 0;
+
+      if (rankPoints > 0) {
+        positionAwards.push({
+          programId,
+          participantId: pId,
+          position: currentPosition,
+          positionPoints: rankPoints,
+        });
+      }
+    }
+
+    // Save the new program results
+    if (positionAwards.length > 0) {
+      await ProgramResult.insertMany(positionAwards);
+    }
+
+    // 7. Global Recalculation: Update totalScore for each affected participant
+    // TotalScore = (Sum of ALL Judge Marks) + (Sum of ALL Position Points)
+    const affectedParticipantIds = [
+      ...new Set(marks.map((mark) => mark.participantId.toString())),
+    ];
+    const affectedTeamIds = new Set();
+
+    for (const partId of affectedParticipantIds) {
       const allMarks = await JudgeMark.find({ participantId: partId });
       const totalJudgeScore = allMarks.reduce(
-        (sum, m) => sum + m.marksGiven,
+        (sum, m) => sum + (m.marksGiven || 0),
         0,
       );
 
-      // Add Position Points (TODO: Store these somewhere)
-      // For now, just Judge Marks.
+      const allResults = await ProgramResult.find({ participantId: partId });
+      const totalPositionScore = allResults.reduce(
+        (sum, r) => sum + (r.positionPoints || 0),
+        0,
+      );
 
-      await Participant.findByIdAndUpdate(partId, {
-        totalScore: totalJudgeScore,
-      });
+      const finalScore = totalJudgeScore + totalPositionScore;
+
+      // Update Participant
+      const updatedParticipant = await Participant.findByIdAndUpdate(
+        partId,
+        { totalScore: finalScore },
+        { new: true },
+      );
+
+      if (updatedParticipant && updatedParticipant.teamId) {
+        affectedTeamIds.add(updatedParticipant.teamId.toString());
+      }
     }
 
-    res.json({ message: "Scores recalculated", participantScores });
+    // 8. Global Recalculation: Update totalScore for each affected team
+    for (const teamId of affectedTeamIds) {
+      const teamParticipants = await Participant.find({ teamId });
+      const teamTotalScore = teamParticipants.reduce(
+        (sum, p) => sum + (p.totalScore || 0),
+        0,
+      );
+
+      await Team.findByIdAndUpdate(teamId, { totalScore: teamTotalScore });
+    }
+
+    res.json({
+      message: "Scores & rankings recalculated successfully",
+      participantsUpdated: affectedParticipantIds.length,
+      teamsUpdated: affectedTeamIds.size,
+      resultsAwarded: positionAwards.length,
+    });
   } catch (error) {
+    console.error("Calculate Error:", error);
     res.status(500).json({ message: error.message });
   }
 };

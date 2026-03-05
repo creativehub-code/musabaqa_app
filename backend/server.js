@@ -30,6 +30,8 @@ app.use("/api/groups", require("./routes/groupRoutes"));
 app.use("/api/programs", require("./routes/programRoutes"));
 app.use("/api/marks", require("./routes/markRoutes"));
 app.use("/api/judges", require("./routes/judgeRoutes"));
+app.use("/api/judgeGroups", require("./routes/judgeGroupRoutes"));
+app.use("/api/settings", require("./routes/settingsRoutes"));
 
 // Basic Route
 app.get("/", (req, res) => {
