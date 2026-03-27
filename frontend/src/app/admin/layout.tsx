@@ -14,8 +14,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     // Basic Client-side Auth Check
-    const token = sessionStorage.getItem('token');
-    const role = sessionStorage.getItem('role');
+    const token = localStorage.getItem('token');
+    const role = localStorage.getItem('role');
 
     if (!token || role !== 'admin') {
       router.push('/login');
@@ -25,7 +25,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }, [router]);
 
   const handleLogout = () => {
-    sessionStorage.clear();
+    localStorage.clear();
     router.push('/login');
   };
 

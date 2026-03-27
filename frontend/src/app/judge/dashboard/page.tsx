@@ -19,7 +19,7 @@ export default function JudgeDashboard() {
     const fetchPrograms = async () => {
       try {
         const data = await apiRequest('/programs');
-        const userData = sessionStorage.getItem('user');
+        const userData = localStorage.getItem('user');
         let assignedIds: string[] = [];
         
         if (userData) {
@@ -29,8 +29,8 @@ export default function JudgeDashboard() {
             const liveJudgeData = await apiRequest(`/judges/me/${user._id}`);
             assignedIds = (liveJudgeData.assignedPrograms || []).map((p: any) => typeof p === 'object' ? p._id : p);
             
-            // Optionally update session storage so other places might benefit
-            sessionStorage.setItem('user', JSON.stringify({
+            // Optionally update local storage so other places might benefit
+            localStorage.setItem('user', JSON.stringify({
               ...user,
               assignedPrograms: liveJudgeData.assignedPrograms
             }));

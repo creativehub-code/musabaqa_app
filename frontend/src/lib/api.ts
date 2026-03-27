@@ -9,7 +9,7 @@ const getBaseUrl = () => {
 const API_BASE_URL = getBaseUrl();
 
 export const apiRequest = async (endpoint: string, method: string = 'GET', body?: any) => {
-  const token = typeof window !== 'undefined' ? sessionStorage.getItem('token') : null;
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
   
   const headers: any = {
     'Content-Type': 'application/json',

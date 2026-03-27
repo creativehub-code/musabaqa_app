@@ -15,9 +15,9 @@ export default function LoginPage() {
     try {
       const data = await apiRequest('/auth/login', 'POST', { email, password });
       
-      sessionStorage.setItem('token', data.token);
-      sessionStorage.setItem('role', data.role);
-      sessionStorage.setItem('user', JSON.stringify(data.user));
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('role', data.role);
+      localStorage.setItem('user', JSON.stringify(data.user));
 
       if (data.role === 'admin') {
         router.push('/admin/dashboard');

@@ -11,9 +11,9 @@ export default function JudgeLayout({ children }: { children: React.ReactNode })
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    const token = sessionStorage.getItem('token');
-    const role = sessionStorage.getItem('role');
-    const userData = sessionStorage.getItem('user');
+    const token = localStorage.getItem('token');
+    const role = localStorage.getItem('role');
+    const userData = localStorage.getItem('user');
 
     if (!token || role !== 'judge') {
       router.push('/login');
@@ -24,7 +24,7 @@ export default function JudgeLayout({ children }: { children: React.ReactNode })
   }, [router]);
 
   const handleLogout = () => {
-    sessionStorage.clear();
+    localStorage.clear();
     router.push('/login');
   };
 

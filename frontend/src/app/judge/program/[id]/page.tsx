@@ -35,7 +35,7 @@ function MarkingInterface({ programIdParam }: { programIdParam: any }) {
 
     const init = async () => {
       try {
-        const userStr = sessionStorage.getItem('user') || '{}';
+        const userStr = localStorage.getItem('user') || '{}';
         const user = JSON.parse(userStr);
         console.log('[DEBUG] INITIALIZING PROGRAM WITH USER:', user);
         
@@ -106,8 +106,8 @@ function MarkingInterface({ programIdParam }: { programIdParam: any }) {
     if (!confirm('Are you sure you want to submit all marks? This cannot be undone.')) return;
     
     // In a real app we might get the Judge ID from token/profile.
-    // MVP: Parse from session storage
-    const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+    // MVP: Parse from local storage
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
     
     // Check for valid ID
     if (!user._id) {

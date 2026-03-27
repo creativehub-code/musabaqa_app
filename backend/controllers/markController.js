@@ -115,7 +115,7 @@ const calculateScores = async (req, res) => {
       if (i > 0) {
         const prevPId = sortedParticipants[i - 1];
         if (currentScore < programScores[prevPId]) {
-          currentPosition = i + 1; // 0-indexed to 1-indexed true rank (e.g., 1, 1, 3)
+          currentPosition++; // Dense rank (e.g., 1, 1, 2, 3)
         }
       }
 
@@ -141,26 +141,20 @@ const calculateScores = async (req, res) => {
     }
 
     // 7. Global Recalculation: Update totalScore for each affected participant
-    // TotalScore = (Sum of ALL Judge Marks) + (Sum of ALL Position Points)
+    // TotalScore = Sum of ALL Position Points (Judges marks are only for ranking)
     const affectedParticipantIds = [
       ...new Set(marks.map((mark) => mark.participantId.toString())),
     ];
     const affectedTeamIds = new Set();
 
     for (const partId of affectedParticipantIds) {
-      const allMarks = await JudgeMark.find({ participantId: partId });
-      const totalJudgeScore = allMarks.reduce(
-        (sum, m) => sum + (m.marksGiven || 0),
-        0,
-      );
-
       const allResults = await ProgramResult.find({ participantId: partId });
       const totalPositionScore = allResults.reduce(
         (sum, r) => sum + (r.positionPoints || 0),
         0,
       );
 
-      const finalScore = totalJudgeScore + totalPositionScore;
+      const finalScore = totalPositionScore;
 
       // Update Participant
       const updatedParticipant = await Participant.findByIdAndUpdate(
@@ -184,6 +178,9 @@ const calculateScores = async (req, res) => {
 
       await Team.findByIdAndUpdate(teamId, { totalScore: teamTotalScore });
     }
+
+    // 9. Update program status to completed
+    await Program.findByIdAndUpdate(programId, { status: "completed" });
 
     res.json({
       message: "Scores & rankings recalculated successfully",

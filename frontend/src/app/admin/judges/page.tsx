@@ -126,89 +126,109 @@ export default function JudgeGroupsPage() {
   };
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-8">
+    <div className="relative">
+      {/* Background ambient glow */}
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-[100px] pointer-events-none -z-10" />
+      <div className="absolute top-40 right-1/4 w-96 h-96 bg-pink-600/10 rounded-full blur-[100px] pointer-events-none -z-10" />
+
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600">
+          <h1 className="text-3xl tracking-tight font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-500 to-red-400">
             Judge Groups (Panels)
           </h1>
-          <p className="text-gray-400 mt-2">Create and manage judging panels for programs</p>
+          <div className="text-gray-400 mt-2 flex items-center gap-2">
+             <div className="w-8 h-px bg-gradient-to-r from-purple-500/50 to-transparent" />
+             Create and manage judging panels for programs
+          </div>
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6 py-3 rounded-xl font-bold transition shadow-lg shadow-purple-900/20"
+          className="group relative flex items-center gap-2 bg-[#13111C] hover:bg-[#1A1825] border border-gray-800 hover:border-purple-500/50 text-white px-6 py-3 rounded-xl font-bold transition-all duration-300 shadow-xl overflow-hidden"
         >
-          <Users size={20} />
-          Add Judge Group
+          {/* Button Hover gradient background */}
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-pink-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+          <Users size={20} className="text-purple-400 group-hover:scale-110 transition-transform duration-300" />
+          <span className="relative z-10">Add Judge Group</span>
         </button>
       </div>
 
       {loading ? (
         <div className="text-gray-500">Loading judge groups...</div>
       ) : (
-        <div className="grid gap-6">
+        <div className="grid lg:grid-cols-2 gap-6 relative z-10">
           {judgeGroups.map((group) => (
-            <div key={group._id} className="bg-gray-900 p-6 rounded-xl border border-gray-800 hover:border-purple-500/30 transition shadow-xl">
-              <div className="flex justify-between items-start mb-4 pb-4 border-b border-gray-800">
+            <div 
+              key={group._id} 
+              className="group relative bg-[#13111C]/80 backdrop-blur-xl p-6 rounded-2xl border border-white/5 hover:border-purple-500/30 transition-all duration-300 hover:shadow-2xl hover:shadow-purple-900/20 hover:-translate-y-1 overflow-hidden"
+            >
+              {/* Decorative side accent */}
+              <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-purple-500 to-pink-500 opacity-50 group-hover:opacity-100 transition-opacity duration-300" />
+              
+              <div className="flex justify-between items-start mb-6 pb-4 border-b border-white/5">
                 <div>
-                    <h3 className="text-2xl font-bold text-white mb-2">{group.name}</h3>
-                    <div className="flex items-center gap-2 text-sm text-gray-400">
-                        <Users size={16} /> 
-                        <span>{group.judges?.length || 0} Judges</span>
+                    <h3 className="text-2xl font-bold text-white mb-2 tracking-tight group-hover:text-purple-300 transition-colors duration-300">{group.name}</h3>
+                    <div className="flex items-center gap-2 text-sm text-gray-400 bg-white/5 px-3 py-1 rounded-full w-fit">
+                        <Users size={14} className="text-purple-400" /> 
+                        <span className="font-medium text-gray-300">{group.judges?.length || 0} Judges</span>
                     </div>
                 </div>
                 <button 
                     onClick={() => handleDeleteGroup(group._id)}
-                    className="p-2 text-gray-500 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition"
+                    className="p-2.5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all duration-200"
                     title="Delete Group"
                 >
                     <Trash2 size={20} />
                 </button>
               </div>
               
-              <div className="grid md:grid-cols-2 gap-6">
+              <div className="grid md:grid-cols-2 gap-8">
                   {/* Judges List */}
                   <div>
-                      <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">Panel Members</h4>
-                      <div className="space-y-2">
+                      <h4 className="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-purple-500" /> Panel Members
+                      </h4>
+                      <div className="space-y-3">
                           {group.judges?.map((judge: any) => (
-                              <div key={judge._id} className="bg-gray-800/50 p-3 rounded-lg border border-gray-700/50 flex flex-col">
-                                  <span className="text-purple-300 font-medium">{judge.name}</span>
-                                  <span className="text-xs text-gray-500">{judge.email}</span>
+                              <div key={judge._id} className="flex items-center gap-3 bg-white/5 p-3 rounded-xl border border-white/5 hover:bg-white/10 transition-colors">
+                                  <div className="w-10 h-10 rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30 flex items-center justify-center shrink-0">
+                                      <Users size={16} />
+                                  </div>
+                                  <div className="flex flex-col min-w-0">
+                                      <span className="text-sm font-bold text-gray-200 truncate">{judge.name}</span>
+                                      <span className="text-[11px] text-gray-400 truncate">{judge.email}</span>
+                                  </div>
                               </div>
                           ))}
                           {(!group.judges || group.judges.length === 0) && (
-                              <div className="text-sm text-gray-500 italic">No judges in this panel</div>
+                              <div className="text-sm text-gray-500 italic p-4 bg-white/5 rounded-xl border border-white/5 text-center">No judges assigned</div>
                           )}
                       </div>
                   </div>
 
                   {/* Assigned Programs */}
                   <div>
-                      <div className="flex justify-between items-center mb-3">
-                          <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider">Assigned Programs</h4>
+                      <div className="flex justify-between items-center mb-4">
+                          <h4 className="text-[11px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                              <span className="w-2 h-2 rounded-full bg-pink-500" /> Assigned Programs
+                          </h4>
                           <button 
                               onClick={() => openEditModal(group)}
-                              className="text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 px-2 py-1 rounded flex items-center gap-1 transition"
+                              className="text-xs bg-white/5 hover:bg-white/10 text-gray-300 font-medium px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors border border-white/5"
                           >
-                              <Edit3 size={12} /> Edit Programs
+                              <Edit3 size={12} className="text-pink-400" /> Edit
                           </button>
                       </div>
                       <div className="flex flex-wrap gap-2 auto-rows-max">
                           {group.assignedPrograms?.map((p: any) => (
-                              <div key={p._id} className="flex flex-col bg-purple-500/10 border border-purple-500/20 px-3 py-1.5 rounded-lg shadow-sm">
-                                  <span className="text-xs font-medium text-purple-300">
+                              <div key={p._id} className="flex items-center gap-2 bg-pink-500/10 border border-pink-500/20 pl-2.5 pr-3 py-1.5 rounded-full shadow-sm hover:bg-pink-500/20 transition-colors cursor-default">
+                                  <div className="w-1.5 h-1.5 rounded-full bg-pink-400" />
+                                  <span className="text-xs font-semibold text-pink-200 tracking-wide">
                                       {p.name}
                                   </span>
-                                  {p.language && (
-                                      <span className="text-[10px] text-purple-400/70 uppercase tracking-wider font-bold">
-                                          {p.language}
-                                      </span>
-                                  )}
                               </div>
                           ))}
                           {(!group.assignedPrograms || group.assignedPrograms.length === 0) && (
-                              <div className="text-sm text-gray-500 italic">No programs assigned</div>
+                              <div className="text-sm text-gray-500 italic p-4 bg-white/5 rounded-xl border border-white/5 text-center w-full">No programs assigned</div>
                           )}
                       </div>
                   </div>
@@ -216,10 +236,20 @@ export default function JudgeGroupsPage() {
             </div>
           ))}
           {judgeGroups.length === 0 && (
-            <div className="text-center p-16 bg-gray-900/50 rounded-2xl border border-dashed border-gray-800 text-gray-500">
-                <Users size={48} className="mx-auto mb-4 text-gray-700" />
-                <h3 className="text-xl font-medium text-gray-300 mb-2">No judge groups found</h3>
-                <p>Create a panel of judges and assign them to specific programs.</p>
+            <div className="lg:col-span-2 text-center p-16 bg-[#13111C]/50 rounded-3xl border border-dashed border-gray-800 relative overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-to-t from-purple-900/10 to-transparent pointer-events-none" />
+                <div className="w-20 h-20 bg-gray-900 rounded-full flex items-center justify-center mx-auto mb-6 border border-gray-800 group-hover:border-purple-500/50 transition-colors shadow-lg shadow-purple-900/10">
+                    <Users size={32} className="text-purple-500" />
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-2">No judge panels yet</h3>
+                <p className="text-gray-400 max-w-sm mx-auto mb-8">Create your first panel of judges to assign them specific programs for marking.</p>
+                <button 
+                    onClick={() => setShowModal(true)}
+                    className="bg-white/5 hover:bg-white/10 border border-white/10 text-white px-6 py-3 rounded-full font-bold transition-all duration-300 inline-flex items-center gap-2"
+                >
+                    <Plus size={18} className="text-purple-400" />
+                    Create First Panel
+                </button>
             </div>
           )}
         </div>
@@ -227,89 +257,93 @@ export default function JudgeGroupsPage() {
 
       {/* Create Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 border border-gray-800 p-8 rounded-2xl w-full max-w-2xl shadow-2xl relative max-h-[90vh] overflow-y-auto custom-scrollbar">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-[#13111C]/95 backdrop-blur-2xl border border-white/10 p-8 rounded-3xl w-full max-w-2xl shadow-2xl relative max-h-[90vh] overflow-y-auto custom-scrollbar shadow-purple-900/20">
             <button 
               onClick={() => setShowModal(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-white"
+              className="absolute top-6 right-6 text-gray-500 hover:text-white bg-white/5 hover:bg-white/10 p-2 rounded-full transition-colors"
             >
-              <X size={24} />
+              <X size={20} />
             </button>
             
-            <h2 className="text-2xl font-bold mb-6 text-white flex items-center gap-2">
-                <Users className="text-purple-500" /> Create Judge Group
+            <h2 className="text-2xl font-bold mb-8 text-white flex items-center gap-3">
+                <div className="p-2.5 bg-purple-500/20 rounded-xl text-purple-400 border border-purple-500/20">
+                    <Users size={24} /> 
+                </div>
+                Create Judge Group
             </h2>
             
-            <form onSubmit={handleCreateJudgeGroup} className="space-y-6">
+            <form onSubmit={handleCreateJudgeGroup} className="space-y-8">
               
               {/* Group Name */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Group Name</label>
+              <div className="space-y-2">
+                <label className="block text-sm font-bold text-gray-400 tracking-wide uppercase">Group Name</label>
                 <input
                   type="text"
                   required
                   value={groupName}
                   onChange={e => setGroupName(e.target.value)}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition"
+                  className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition-all placeholder-gray-600 font-medium"
                   placeholder="e.g., Quran Memorization Panel A"
                 />
               </div>
 
-              <hr className="border-gray-800" />
+              <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
 
               {/* Judges Section */}
-              <div>
-                  <div className="flex justify-between items-center mb-3">
-                      <label className="block text-sm font-medium text-gray-300">Add Judges to Panel</label>
+              <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                      <label className="block text-sm font-bold text-gray-400 tracking-wide uppercase">Panel Members</label>
                       <button 
                           type="button" 
                           onClick={handleAddJudgeInput}
-                          className="text-xs bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 transition"
+                          className="text-xs bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 font-bold px-3 py-2 rounded-lg flex items-center gap-1.5 transition-colors border border-purple-500/20"
                       >
-                          <Plus size={14} /> Add Another
+                          <Plus size={14} /> Add Judge
                       </button>
                   </div>
                   
                   <div className="space-y-4">
                       {judgesInput.map((judge, idx) => (
-                          <div key={idx} className="bg-[#13111C] p-4 rounded-xl border border-gray-800 relative group">
+                          <div key={idx} className="bg-black/20 p-5 rounded-2xl border border-white/5 relative group hover:border-purple-500/30 transition-colors">
                              {judgesInput.length > 1 && (
                                 <button 
                                     type="button"
                                     onClick={() => handleRemoveJudgeInput(idx)}
-                                    className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white p-1.5 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                                    className="absolute -top-3 -right-3 bg-red-500 hover:bg-red-400 text-white p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-all scale-90 group-hover:scale-100"
+                                    title="Remove Judge"
                                 >
-                                    <UserMinus size={14} />
+                                    <X size={14} strokeWidth={3} />
                                 </button>
                              )}
-                             <div className="grid md:grid-cols-3 gap-3">
+                             <div className="grid md:grid-cols-3 gap-4">
                                 <div>
-                                    <label className="block text-[10px] text-gray-500 uppercase font-bold mb-1">Name</label>
+                                    <label className="block text-[10px] text-gray-500 uppercase font-bold mb-1.5 ml-1">Name</label>
                                     <input
                                         type="text" required
                                         value={judge.name}
                                         onChange={e => handleJudgeInputChange(idx, 'name', e.target.value)}
-                                        className="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-sm text-white focus:border-purple-500 outline-none"
+                                        className="w-full bg-black/40 border border-white/5 rounded-xl p-2.5 text-sm text-white focus:border-purple-500 outline-none transition-colors"
                                         placeholder="Judge Name"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-[10px] text-gray-500 uppercase font-bold mb-1">Email</label>
+                                    <label className="block text-[10px] text-gray-500 uppercase font-bold mb-1.5 ml-1">Email</label>
                                     <input
                                         type="email" required
                                         value={judge.email}
                                         onChange={e => handleJudgeInputChange(idx, 'email', e.target.value)}
-                                        className="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-sm text-white focus:border-purple-500 outline-none"
+                                        className="w-full bg-black/40 border border-white/5 rounded-xl p-2.5 text-sm text-white focus:border-purple-500 outline-none transition-colors"
                                         placeholder="judge@example.com"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-[10px] text-gray-500 uppercase font-bold mb-1">Password</label>
+                                    <label className="block text-[10px] text-gray-500 uppercase font-bold mb-1.5 ml-1">Password</label>
                                     <input
                                         type="text" required
                                         value={judge.password}
                                         onChange={e => handleJudgeInputChange(idx, 'password', e.target.value)}
-                                        className="w-full bg-gray-800 border border-gray-700 rounded-lg p-2 text-sm text-white focus:border-purple-500 outline-none"
+                                        className="w-full bg-black/40 border border-white/5 rounded-xl p-2.5 text-sm text-white focus:border-purple-500 outline-none transition-colors"
                                         placeholder="secret123"
                                     />
                                 </div>
@@ -319,24 +353,24 @@ export default function JudgeGroupsPage() {
                   </div>
               </div>
 
-              <hr className="border-gray-800" />
+              <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
               
               {/* Programs Assignment */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center gap-2">
-                    Assign Programs
-                    <span className="text-xs font-normal text-gray-500 ml-auto">
-                        {assignedProgramIds.length} selected
+              <div className="space-y-4">
+                <div className="flex justify-between items-end">
+                    <label className="block text-sm font-bold text-gray-400 tracking-wide uppercase">Assign Programs</label>
+                    <span className="text-[11px] font-bold bg-white/10 text-gray-300 px-2.5 py-1 rounded-md border border-white/5">
+                        {assignedProgramIds.length} <span className="text-gray-500">Selected</span>
                     </span>
-                </label>
-                <div className="bg-[#13111C] border border-gray-800 rounded-xl p-4 max-h-64 overflow-y-auto custom-scrollbar space-y-2 relative">
+                </div>
+                <div className="bg-black/20 border border-white/5 rounded-2xl p-2 max-h-64 overflow-y-auto custom-scrollbar space-y-1 relative">
                   {programAssignmentStatus.length === 0 ? (
-                      <div className="text-sm text-gray-500 italic text-center py-4">No programs available</div>
+                      <div className="text-sm text-gray-500 italic text-center py-8">No programs available</div>
                   ) : (
                       programAssignmentStatus.map((p: any) => {
                         const isAlreadyAssigned = !!p.assignedToGroupName;
                         return (
-                        <label key={p._id} className={`flex items-center gap-3 p-2 rounded-lg transition-colors ${isAlreadyAssigned ? 'opacity-50 cursor-not-allowed bg-red-900/10' : 'cursor-pointer hover:bg-gray-800/50 group'}`}>
+                        <label key={p._id} className={`flex items-center gap-4 py-3 px-4 rounded-xl transition-all duration-200 ${isAlreadyAssigned ? 'opacity-50 cursor-not-allowed bg-red-900/5 border border-red-500/10' : 'cursor-pointer hover:bg-white/5 group border border-transparent hover:border-white/5'}`}>
                             <div className="relative flex items-center justify-center shrink-0">
                                 <input
                                 type="checkbox"
@@ -346,26 +380,26 @@ export default function JudgeGroupsPage() {
                                     if (e.target.checked) setAssignedProgramIds([...assignedProgramIds, p._id]);
                                     else setAssignedProgramIds(assignedProgramIds.filter(id => id !== p._id));
                                 }}
-                                className="peer appearance-none w-5 h-5 border-2 border-gray-600 rounded bg-gray-900 checked:bg-purple-600 checked:border-purple-600 transition-colors disabled:cursor-not-allowed cursor-pointer"
+                                className="peer appearance-none w-6 h-6 border-2 border-gray-600 rounded-lg bg-black/50 checked:bg-purple-500 checked:border-purple-500 transition-all disabled:cursor-not-allowed cursor-pointer"
                                 />
-                                <svg className="absolute w-3 h-3 text-white opacity-0 peer-checked:opacity-100 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                <svg className="absolute w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                                 </svg>
                             </div>
-                            <div className="flex flex-col flex-1">
-                                <div className="flex justify-between items-center">
-                                    <span className={assignedProgramIds.includes(p._id) ? "text-white font-medium" : "text-gray-400 group-hover:text-gray-300"}>
+                            <div className="flex flex-col flex-1 min-w-0">
+                                <div className="flex justify-between items-start md:items-center flex-col md:flex-row gap-2">
+                                    <span className={`truncate ${assignedProgramIds.includes(p._id) ? "text-purple-300 font-bold" : "text-gray-300 font-medium group-hover:text-white transition-colors"}`}>
                                         {p.name}
                                     </span>
                                     {isAlreadyAssigned && (
-                                        <span className="text-[10px] bg-red-500/10 text-red-400 px-2 py-0.5 rounded border border-red-500/20 whitespace-nowrap">
+                                        <span className="text-[10px] bg-red-500/10 text-red-400 px-2 py-1 rounded-md border border-red-500/20 whitespace-nowrap font-bold uppercase tracking-wider shrink-0">
                                             Assigned to: {p.assignedToGroupName}
                                         </span>
                                     )}
                                 </div>
                                 {p.language && (
-                                    <span className="text-xs text-gray-500 uppercase tracking-wider font-bold">
-                                        Language: {p.language}
+                                    <span className="text-[10px] text-gray-500 uppercase tracking-wider font-bold mt-1">
+                                        Language: <span className="text-gray-400">{p.language}</span>
                                     </span>
                                 )}
                             </div>
@@ -376,12 +410,15 @@ export default function JudgeGroupsPage() {
               </div>
 
               {/* Submit Action */}
-              <div className="pt-4 mt-8 border-t border-gray-800 sticky bottom-0 bg-gray-900 pb-2">
+              <div className="pt-6 mt-8 border-t border-white/10 sticky bottom-0 bg-[#13111C]/95 backdrop-blur-xl pb-2">
                   <button
                     type="submit"
-                    className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-purple-900/30 transition-all transform hover:scale-[1.01] active:scale-[0.99] flex justify-center items-center gap-2"
+                    className="w-full relative group overflow-hidden bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold py-4 rounded-2xl shadow-lg transition-all transform flex justify-center items-center gap-2"
                   >
-                    <Users size={20} /> Create Judge Panel
+                    <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 opacity-80 group-hover:opacity-100 transition-opacity" />
+                    <span className="relative z-10 flex items-center gap-2 drop-shadow-md">
+                        <Users size={20} /> Deploy Judge Panel
+                    </span>
                   </button>
               </div>
             </form>
@@ -391,31 +428,34 @@ export default function JudgeGroupsPage() {
 
       {/* Edit Programs Modal */}
       {showEditModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 border border-gray-800 p-8 rounded-2xl w-full max-w-xl shadow-2xl relative max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-[#13111C]/95 backdrop-blur-2xl border border-white/10 p-8 rounded-3xl w-full max-w-xl shadow-2xl relative max-h-[90vh] flex flex-col shadow-purple-900/20">
             <button 
               onClick={() => {
                   setShowEditModal(false);
                   setEditingGroupId(null);
                   setAssignedProgramIds([]);
               }}
-              className="absolute top-4 right-4 text-gray-400 hover:text-white"
+              className="absolute top-6 right-6 text-gray-500 hover:text-white bg-white/5 hover:bg-white/10 p-2 rounded-full transition-colors"
             >
-              <X size={24} />
+              <X size={20} />
             </button>
             
-            <h2 className="text-2xl font-bold mb-6 text-white flex items-center gap-2">
-                <Edit3 className="text-purple-500" /> Edit Assigned Programs
+            <h2 className="text-2xl font-bold mb-6 text-white flex items-center gap-3">
+                <div className="p-2.5 bg-pink-500/20 rounded-xl text-pink-400 border border-pink-500/20">
+                    <Edit3 size={24} /> 
+                </div>
+                Edit Assigned Programs
             </h2>
             
-            <form onSubmit={handleUpdatePrograms} className="flex flex-col flex-1 min-h-0">
-               <p className="text-sm text-gray-400 mb-4">
-                   Update the programs that this Judge Panel is authorized to evaluate. Changes take effect immediately.
+            <form onSubmit={handleUpdatePrograms} className="flex flex-col flex-1 min-h-0 space-y-6">
+               <p className="text-sm text-gray-400 mb-2 leading-relaxed">
+                   Update the programs that this Judge Panel is authorized to evaluate. Changes take effect <strong className="text-white">immediately</strong>.
                </p>
 
-              <div className="bg-[#13111C] border border-gray-800 rounded-xl p-4 overflow-y-auto custom-scrollbar space-y-2 flex-1 relative mb-6">
+              <div className="bg-black/20 border border-white/5 rounded-2xl p-2 overflow-y-auto custom-scrollbar space-y-1 flex-1 relative">
                   {programAssignmentStatus.length === 0 ? (
-                      <div className="text-sm text-gray-500 italic text-center py-4">No programs available</div>
+                      <div className="text-sm text-gray-500 italic text-center py-8">No programs available</div>
                   ) : (
                       programAssignmentStatus.map((p: any) => {
                         // In edit mode, we only disable if it's assigned to a DIFFERENT group
@@ -423,7 +463,7 @@ export default function JudgeGroupsPage() {
                         const isAssignedToOtherGroup = p.assignedToGroupName && p.assignedToGroupName !== editingGroup?.name;
 
                         return (
-                        <label key={p._id} className={`flex items-center gap-3 p-2 rounded-lg transition-colors ${isAssignedToOtherGroup ? 'opacity-50 cursor-not-allowed bg-red-900/10' : 'cursor-pointer hover:bg-gray-800/50 group'}`}>
+                        <label key={p._id} className={`flex items-center gap-4 py-3 px-4 rounded-xl transition-all duration-200 ${isAssignedToOtherGroup ? 'opacity-50 cursor-not-allowed bg-red-900/5 border border-red-500/10' : 'cursor-pointer hover:bg-white/5 group border border-transparent hover:border-white/5'}`}>
                             <div className="relative flex items-center justify-center shrink-0">
                                 <input
                                 type="checkbox"
@@ -433,26 +473,26 @@ export default function JudgeGroupsPage() {
                                     if (e.target.checked) setAssignedProgramIds([...assignedProgramIds, p._id]);
                                     else setAssignedProgramIds(assignedProgramIds.filter(id => id !== p._id));
                                 }}
-                                className="peer appearance-none w-5 h-5 border-2 border-gray-600 rounded bg-gray-900 checked:bg-purple-600 checked:border-purple-600 transition-colors disabled:cursor-not-allowed cursor-pointer"
+                                className="peer appearance-none w-6 h-6 border-2 border-gray-600 rounded-lg bg-black/50 checked:bg-pink-500 checked:border-pink-500 transition-all disabled:cursor-not-allowed cursor-pointer"
                                 />
-                                <svg className="absolute w-3 h-3 text-white opacity-0 peer-checked:opacity-100 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                <svg className="absolute w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                                 </svg>
                             </div>
-                            <div className="flex flex-col flex-1">
-                                <div className="flex justify-between items-center">
-                                    <span className={assignedProgramIds.includes(p._id) ? "text-white font-medium" : "text-gray-400 group-hover:text-gray-300"}>
+                            <div className="flex flex-col flex-1 min-w-0">
+                                <div className="flex justify-between items-start md:items-center flex-col md:flex-row gap-2">
+                                    <span className={`truncate ${assignedProgramIds.includes(p._id) ? "text-pink-300 font-bold" : "text-gray-300 font-medium group-hover:text-white transition-colors"}`}>
                                         {p.name}
                                     </span>
                                     {isAssignedToOtherGroup && (
-                                        <span className="text-[10px] bg-red-500/10 text-red-400 px-2 py-0.5 rounded border border-red-500/20 whitespace-nowrap">
+                                        <span className="text-[10px] bg-red-500/10 text-red-400 px-2 py-1 rounded-md border border-red-500/20 whitespace-nowrap font-bold uppercase tracking-wider shrink-0">
                                             Assigned to: {p.assignedToGroupName}
                                         </span>
                                     )}
                                 </div>
                                 {p.language && (
-                                    <span className="text-xs text-gray-500 uppercase tracking-wider font-bold">
-                                        Language: {p.language}
+                                    <span className="text-[10px] text-gray-500 uppercase tracking-wider font-bold mt-1">
+                                        Language: <span className="text-gray-400">{p.language}</span>
                                     </span>
                                 )}
                             </div>
@@ -461,12 +501,15 @@ export default function JudgeGroupsPage() {
                   )}
               </div>
 
-              <div className="pt-4 border-t border-gray-800 mt-auto">
+              <div className="pt-6 border-t border-white/10 mt-auto bg-[#13111C]/95 backdrop-blur-xl">
                   <button
                     type="submit"
-                    className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-purple-900/30 transition-all transform hover:scale-[1.01] active:scale-[0.99] flex justify-center items-center gap-2"
+                    className="w-full relative group overflow-hidden bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold py-4 rounded-2xl shadow-lg transition-all transform flex justify-center items-center gap-2"
                   >
-                     Save Changes
+                    <div className="absolute inset-0 bg-gradient-to-r from-pink-600 to-purple-600 opacity-80 group-hover:opacity-100 transition-opacity" />
+                    <span className="relative z-10 flex items-center gap-2 drop-shadow-md">
+                        Save Changes
+                    </span>
                   </button>
               </div>
             </form>

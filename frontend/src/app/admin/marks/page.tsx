@@ -3,13 +3,18 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { apiRequest } from '@/lib/api';
 import { FileDown, RefreshCw, Search, Trophy, CheckCircle, Clock, ChevronDown, Check, Filter } from 'lucide-react';
+import { useAdminData } from '../AdminContext';
 
 export default function MarksReviewPage() {
+  const { refreshTeams, refreshParticipants, refreshPrograms } = useAdminData();
   const [programs, setPrograms] = useState<any[]>([]);
   const [selectedProgram, setSelectedProgram] = useState('');
   const [selectedProgramData, setSelectedProgramData] = useState<any>(null);
   const [marks, setMarks] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  
+  const [verifying, setVerifying] = useState(false);
+  const [verifiedPrograms, setVerifiedPrograms] = useState<Set<string>>(new Set());
   
   // Dropdown & Filter state
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -90,11 +95,11 @@ export default function MarksReviewPage() {
     // 2. Convert to array and sort by total score descending
     const sortedParticipants = Object.values(participantMap).sort((a, b) => b.totalScore - a.totalScore);
 
-    // 3. Assign true ranks (handling ties)
+    // 3. Assign true ranks (handling ties - dense ranking)
     let currentRank = 1;
     for (let i = 0; i < sortedParticipants.length; i++) {
         if (i > 0 && sortedParticipants[i].totalScore < sortedParticipants[i - 1].totalScore) {
-            currentRank = i + 1;
+            currentRank++;
         }
         sortedParticipants[i].rank = currentRank;
     }
@@ -104,11 +109,22 @@ export default function MarksReviewPage() {
 
   const handleCalculate = async () => {
     if (!confirm('This will recalculate scores for all teams based on these marks. Continue?')) return;
+    setVerifying(true);
     try {
        await apiRequest(`/marks/calculate/${selectedProgram}`, 'POST');
+       await refreshTeams();
+       await refreshParticipants();
+       await refreshPrograms();
+       
+       // Update local selected program data to reflect the new state so it updates immediately
+       setSelectedProgramData((prev: any) => ({ ...prev, status: 'completed' }));
+       
+       setVerifiedPrograms(prev => new Set([...Array.from(prev), selectedProgram]));
        alert('Scores Recalculated and Leaderboard Updated!');
     } catch(e: any) {
         alert(e.message);
+    } finally {
+        setVerifying(false);
     }
   };
 
@@ -269,11 +285,11 @@ export default function MarksReviewPage() {
                 <div className="flex gap-4 w-full md:w-auto">
                     <button 
                         onClick={handleCalculate}
-                        disabled={!selectedProgram}
+                        disabled={!selectedProgram || verifying || verifiedPrograms.has(selectedProgram) || selectedProgramData?.status === 'completed'}
                         className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-3 rounded-xl font-bold transition-all shadow-lg hover:shadow-green-900/20 active:scale-95"
                     >
-                        <Trophy size={18} />
-                        Verify
+                        {(verifiedPrograms.has(selectedProgram) || selectedProgramData?.status === 'completed') ? <CheckCircle size={18} /> : <Trophy size={18} />}
+                        {verifying ? 'Verifying...' : (verifiedPrograms.has(selectedProgram) || selectedProgramData?.status === 'completed') ? 'Verified' : 'Verify'}
                     </button> 
 
                     <button
