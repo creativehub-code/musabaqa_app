@@ -3,17 +3,22 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiRequest } from '@/lib/api';
+import { Lock, User, Award } from 'lucide-react';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
+    setError('');
     try {
-      const data = await apiRequest('/auth/login', 'POST', { email, password });
+      // Send as 'email' — backend handles both email and username lookups
+      const data = await apiRequest('/auth/login', 'POST', { email: identifier, password });
       
       localStorage.setItem('token', data.token);
       localStorage.setItem('role', data.role);
@@ -27,49 +32,84 @@ export default function LoginPage() {
         router.push('/');
       }
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || 'Invalid credentials');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">
-      <div className="bg-gray-800 p-8 rounded-lg shadow-lg w-full max-w-md border border-gray-700">
-        <h2 className="text-3xl font-bold mb-6 text-center text-purple-400">Festival Login</h2>
-        
-        {error && <div className="bg-red-500 text-white p-2 rounded mb-4 text-center">{error}</div>}
-        
-        <form onSubmit={handleLogin} className="space-y-4">
-          <div>
-            <label className="block mb-1 text-gray-300">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full p-2 rounded bg-gray-700 border border-gray-600 focus:border-purple-500 outline-none text-white placeholder-gray-400"
-              placeholder="admin@fest.com"
-              required
-            />
-          </div>
-          <div>
-            <label className="block mb-1 text-gray-300">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full p-2 rounded bg-gray-700 border border-gray-600 focus:border-purple-500 outline-none text-white placeholder-gray-400"
-              placeholder="admin123"
-              required
-            />
-          </div>
-          <button
-            type="submit"
-            className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded transition duration-200 shadow-lg shadow-purple-500/50"
-          >
-            Sign In
-          </button>
-        </form>
+    <div className="min-h-screen flex items-center justify-center bg-[#0D0B18] text-white relative overflow-hidden">
+      {/* Background glow */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-purple-900/20 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-0 right-0 w-96 h-96 bg-indigo-900/10 rounded-full blur-[100px] pointer-events-none" />
 
+      <div className="relative w-full max-w-md mx-4">
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-purple-600/20 border border-purple-500/30 mb-4 shadow-lg shadow-purple-900/20">
+            <Award size={32} className="text-purple-400" />
+          </div>
+          <h1 className="text-3xl font-bold text-white">Musabaqa</h1>
+          <p className="text-gray-400 mt-1 text-sm">Competition Management System</p>
+        </div>
 
+        {/* Card */}
+        <div className="bg-[#1E1B2E] border border-[#2D283E] rounded-3xl p-8 shadow-2xl shadow-black/50">
+          <h2 className="text-xl font-bold mb-1 text-white">Sign In</h2>
+          <p className="text-gray-400 text-sm mb-6">Enter your credentials to continue</p>
+          
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-3 rounded-xl mb-5 text-sm flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-400 shrink-0" />
+              {error}
+            </div>
+          )}
+          
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">Username or Email</label>
+              <div className="relative">
+                <User size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
+                <input
+                  type="text"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3.5 rounded-xl bg-[#13111C] border border-[#2D283E] focus:border-purple-500 focus:ring-1 focus:ring-purple-500/50 outline-none text-white placeholder-gray-600 transition-all text-sm"
+                  placeholder="admin@fest.com or mal_judge1"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">Password</label>
+              <div className="relative">
+                <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3.5 rounded-xl bg-[#13111C] border border-[#2D283E] focus:border-purple-500 focus:ring-1 focus:ring-purple-500/50 outline-none text-white placeholder-gray-600 transition-all text-sm"
+                  placeholder="••••••••"
+                  required
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-lg shadow-purple-900/30 disabled:opacity-60 disabled:cursor-not-allowed transform active:scale-[0.98] mt-2"
+            >
+              {loading ? 'Signing in...' : 'Sign In'}
+            </button>
+          </form>
+
+          <p className="text-center text-gray-600 text-xs mt-6">
+            Admins use email · Judges use their username
+          </p>
+        </div>
       </div>
     </div>
   );

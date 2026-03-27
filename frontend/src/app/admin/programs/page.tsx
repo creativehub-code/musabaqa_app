@@ -166,8 +166,16 @@ export default function ProgramsPage() {
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan={5} className="p-12 text-center text-gray-500">
-                                            No programs found.
+                                        <td colSpan={5} className="p-16 text-center text-gray-500 bg-[#13111C]/30">
+                                            <div className="flex flex-col items-center justify-center gap-4">
+                                                <div className="w-16 h-16 bg-gray-900 rounded-full flex items-center justify-center border border-gray-800 shadow-inner">
+                                                    <FileText size={24} className="text-purple-500/50" />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <p className="text-lg font-medium text-gray-300">No {language} programs created yet</p>
+                                                    <p className="text-sm">Click the + button above to add one.</p>
+                                                </div>
+                                            </div>
                                         </td>
                                     </tr>
                                 )}

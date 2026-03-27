@@ -22,6 +22,34 @@ const getParticipants = async (req, res) => {
   }
 };
 
+// @desc    Get participants filtered by their program language (for judges)
+// @route   GET /api/participants/by-language?language=Malayalam
+// @access  Judge / Admin
+const getParticipantsByLanguage = async (req, res) => {
+  try {
+    const { language } = req.query;
+    if (!language) {
+      return res.status(400).json({ message: "language query param required" });
+    }
+
+    // Find all programs with that language first
+    const Program = require("../models/Program");
+    const programs = await Program.find({ language }).select("_id");
+    const programIds = programs.map((p) => p._id);
+
+    const participants = await Participant.find({ programs: { $in: programIds } })
+      .select("-image")
+      .populate("teamId", "name")
+      .populate("groupId", "name")
+      .populate("programs", "name language")
+      .sort({ createdAt: 1 });
+
+    res.json(participants);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // @desc    Get single participant (No Image)
 // @route   GET /api/participants/:id
 // @access  Public/Admin
@@ -171,6 +199,7 @@ const deleteParticipant = async (req, res) => {
 
 module.exports = {
   getParticipants,
+  getParticipantsByLanguage,
   getParticipantById,
   getParticipantPhoto,
   createParticipant,

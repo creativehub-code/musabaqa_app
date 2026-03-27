@@ -2,13 +2,15 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { apiRequest } from '@/lib/api';
-import { Plus, Trash2, Users, X, UserMinus, Edit3 } from 'lucide-react';
+import { Plus, Trash2, Users, X, UserMinus, Edit3, Globe, KeyRound } from 'lucide-react';
 import { useAdminData } from '../AdminContext';
 
 export default function JudgeGroupsPage() {
   const { programs } = useAdminData(); // Use cached programs
   const [judgeGroups, setJudgeGroups] = useState<any[]>([]);
+  const [allJudges, setAllJudges] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingJudges, setLoadingJudges] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
@@ -29,8 +31,20 @@ export default function JudgeGroupsPage() {
     }
   };
 
+  const fetchAllJudges = async () => {
+    try {
+      const data = await apiRequest('/judges');
+      setAllJudges(Array.isArray(data) ? data : []);
+      setLoadingJudges(false);
+    } catch (error) {
+      console.error(error);
+      setLoadingJudges(false);
+    }
+  };
+
   useEffect(() => {
     fetchJudgeGroups();
+    fetchAllJudges();
   }, []);
 
   // Compute assigned programs to disable/sort them
@@ -254,6 +268,71 @@ export default function JudgeGroupsPage() {
           )}
         </div>
       )}
+
+      {/* ── Individual Judges Section ── */}
+      <div className="mt-12">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 bg-blue-500/20 border border-blue-500/20 rounded-xl">
+            <Globe size={20} className="text-blue-400" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-white">Individual Judges by Language</h2>
+            <p className="text-gray-500 text-sm">Judges seeded with username/password credentials</p>
+          </div>
+          <div className="ml-auto text-xs bg-blue-500/10 border border-blue-500/20 text-blue-400 px-3 py-1.5 rounded-full font-bold">
+            {allJudges.length} judges
+          </div>
+        </div>
+
+        {loadingJudges ? (
+          <div className="text-gray-500 text-center py-8">Loading judges...</div>
+        ) : allJudges.filter(j => j.username).length === 0 ? (
+          <div className="text-center py-12 bg-[#13111C]/50 rounded-2xl border border-dashed border-gray-800">
+            <Globe size={28} className="mx-auto mb-3 text-gray-600" />
+            <p className="text-gray-500">No individual judges found.</p>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {['Malayalam', 'English', 'Urdu', 'Arabic'].map(lang => {
+              const langJudges = allJudges.filter(j => j.category === lang && j.username);
+              if (langJudges.length === 0) return null;
+              const langColors: Record<string, string> = {
+                Malayalam: 'from-purple-500/20 to-purple-900/5 border-purple-500/20 text-purple-400',
+                English: 'from-blue-500/20 to-blue-900/5 border-blue-500/20 text-blue-400',
+                Urdu: 'from-green-500/20 to-green-900/5 border-green-500/20 text-green-400',
+                Arabic: 'from-orange-500/20 to-orange-900/5 border-orange-500/20 text-orange-400',
+              };
+              const cls = langColors[lang] || 'from-gray-500/20 to-gray-900/5 border-gray-500/20 text-gray-400';
+              return (
+                <div key={lang} className={"bg-gradient-to-b " + cls.replace('text-', 'border-').split(' ').filter(c => c.startsWith('from') || c.startsWith('to') || c.startsWith('border')).join(' ') + " border rounded-2xl p-4 bg-[#13111C]"}
+                  style={{background: 'rgba(19,17,28,0.8)', border: '1px solid rgba(255,255,255,0.06)'}}>
+                  <div className="flex items-center gap-2 mb-4 pb-3 border-b border-white/5">
+                    <Globe size={14} className={cls.split(' ').find(c => c.startsWith('text-')) || 'text-gray-400'} />
+                    <h3 className={"font-bold text-sm " + (cls.split(' ').find(c => c.startsWith('text-')) || 'text-gray-400')}>{lang}</h3>
+                    <span className="ml-auto text-[10px] bg-white/5 text-gray-400 px-1.5 py-0.5 rounded-full border border-white/5">{langJudges.length}</span>
+                  </div>
+                  <div className="space-y-2">
+                    {langJudges.map((judge: any) => (
+                      <div key={judge._id} className="flex items-center gap-3 bg-white/5 hover:bg-white/10 transition-colors rounded-xl p-3 border border-white/5">
+                        <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center shrink-0 text-white font-bold text-sm border border-white/10">
+                          {judge.name.charAt(0)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-gray-200 truncate">{judge.name}</p>
+                          <div className="flex items-center gap-1 mt-0.5">
+                            <KeyRound size={10} className="text-gray-500" />
+                            <span className="text-[11px] text-gray-500 font-mono">{judge.username}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       {/* Create Modal */}
       {showModal && (

@@ -128,6 +128,16 @@ export default function TeamsPage() {
             </div>
           </div>
         ))}
+        {teams.length === 0 && (
+            <div className="col-span-full text-center p-16 bg-[#13111C]/50 rounded-3xl border border-dashed border-gray-800 relative overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-to-t from-purple-900/10 to-transparent pointer-events-none" />
+                <div className="w-20 h-20 bg-gray-900 rounded-full flex items-center justify-center mx-auto mb-6 border border-gray-800 group-hover:border-purple-500/50 transition-colors shadow-lg shadow-purple-900/10">
+                    <Trophy size={32} className="text-purple-500" />
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-2">No teams yet</h3>
+                <p className="text-gray-400 max-w-sm mx-auto">Create your first team to track points and organize participants.</p>
+            </div>
+        )}
       </div>
 
       {/* Expanded Team Details Section */}

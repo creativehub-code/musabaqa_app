@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const {
   getParticipants,
+  getParticipantsByLanguage,
   getParticipantById,
   getParticipantPhoto,
   createParticipant,
@@ -13,6 +14,7 @@ const {
 // Since we don't have middleware protecting routes yet, we'll just define endpoints.
 // TODO: Add auth middleware for POST/PUT/DELETE
 
+router.route("/by-language").get(getParticipantsByLanguage);
 router.route("/:id/photo").get(getParticipantPhoto);
 router.route("/").get(getParticipants).post(createParticipant);
 

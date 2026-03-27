@@ -6,7 +6,7 @@ const Program = require("../models/Program");
 // @access  Public (should be Admin)
 const getJudges = async (req, res) => {
   try {
-    const judges = await Judge.find().populate("assignedPrograms");
+    const judges = await Judge.find().populate("judgeGroupId");
     res.json(judges);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -25,7 +25,9 @@ const getMe = async (req, res) => {
     res.json({
       _id: judge._id,
       name: judge.name,
-      email: judge.email,
+      email: judge.email || null,
+      username: judge.username || null,
+      category: judge.category || null,
       assignedPrograms: judge.judgeGroupId
         ? judge.judgeGroupId.assignedPrograms
         : [],

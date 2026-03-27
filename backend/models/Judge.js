@@ -6,10 +6,20 @@ const judgeSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    username: {
+      type: String,
+      unique: true,
+      sparse: true, // allow existing judges without username
+    },
     email: {
       type: String,
-      required: true,
+      required: false,
       unique: true,
+      sparse: true,
+    },
+    category: {
+      type: String,
+      enum: ["Malayalam", "Arabic", "Urdu", "English"],
     },
     password: {
       type: String,

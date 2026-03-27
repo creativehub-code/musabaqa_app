@@ -450,6 +450,16 @@ export default function ParticipantsPage() {
 
       {/* Participant List (Table) */}
       {/* Participant List (Table & Mobile Cards) */}
+      {filteredParticipants.length === 0 ? (
+            <div className="col-span-full text-center p-16 bg-[#13111C]/50 rounded-3xl border border-dashed border-gray-800 relative overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-to-t from-purple-900/10 to-transparent pointer-events-none" />
+                <div className="w-20 h-20 bg-gray-900 rounded-full flex items-center justify-center mx-auto mb-6 border border-gray-800 group-hover:border-purple-500/50 transition-colors shadow-lg shadow-purple-900/10">
+                    <Users size={32} className="text-purple-500" />
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-2">No participants found</h3>
+                <p className="text-gray-400 max-w-sm mx-auto">Try adding a new participant, or check your search term if you're filtering.</p>
+            </div>
+      ) : (
        <div className="bg-[#1E1B2E] rounded-2xl border border-[#2D283E] overflow-hidden shadow-xl">
         
         {/* Desktop Table View */}
@@ -557,6 +567,7 @@ export default function ParticipantsPage() {
             </div>
         )}
       </div>
+      )}
 
      {/* Add Program Modal (kept mostly functional/same but styled) */}
     {showAddProgramModal && selectedParticipantForProgram && (

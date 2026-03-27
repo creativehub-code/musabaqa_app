@@ -3,13 +3,13 @@ const Judge = require("../models/Judge");
 
 const login = async (req, res) => {
   let { email, password } = req.body;
-  if (email) email = email.trim();
+  // Support both email and username fields
+  const identifier = email ? email.trim() : '';
 
   try {
-    // 1. Admin Check (Database)
-    const admin = await Admin.findOne({ email });
+    // 1. Admin Check (Database) - by email
+    const admin = await Admin.findOne({ email: identifier });
     if (admin && admin.password === password) {
-      // Plaintext check for MVP as requested (should be hashed in prod)
       return res.json({
         token: `token-${admin._id}`,
         role: "admin",
@@ -17,16 +17,22 @@ const login = async (req, res) => {
       });
     }
 
-    // 2. Judge Check (Database)
-    const judge = await Judge.findOne({ email }).populate("judgeGroupId");
+    // 2. Judge Check - try email first, then username
+    let judge = await Judge.findOne({ email: identifier }).populate("judgeGroupId");
+    if (!judge) {
+      judge = await Judge.findOne({ username: identifier }).populate("judgeGroupId");
+    }
+
     if (judge && judge.password === password) {
       return res.json({
         token: `token-${judge._id}`,
         role: "judge",
         user: {
           _id: judge._id,
-          email: judge.email,
+          email: judge.email || null,
+          username: judge.username || null,
           name: judge.name,
+          category: judge.category || null,
           assignedPrograms: judge.judgeGroupId
             ? judge.judgeGroupId.assignedPrograms
             : [],
