@@ -1,5 +1,5 @@
 const getBaseUrl = () => {
-  let url = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+  let url = process.env.NEXT_PUBLIC_API_URL || 'https://musabaqa-app.onrender.com/api';
   if (!url.startsWith('http')) {
     url = `https://${url}`;
   }

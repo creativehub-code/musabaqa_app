@@ -280,7 +280,7 @@ export default function TeamsPage() {
                                          {/* Image */}
                                         <div className="w-16 h-16 rounded-lg overflow-hidden border border-[#2D283E] bg-gray-800 shrink-0 z-10">
                                              <img 
-                                                src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/participants/${p._id}/photo`} 
+                                                src={`${process.env.NEXT_PUBLIC_API_URL || 'https://musabaqa-app.onrender.com/api'}/participants/${p._id}/photo`} 
                                                 alt={p.name} 
                                                 loading="lazy"
                                                 className="w-full h-full object-cover"

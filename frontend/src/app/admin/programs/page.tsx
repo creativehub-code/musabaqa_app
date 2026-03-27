@@ -224,7 +224,7 @@ export default function ProgramsPage() {
                                             {p.name.charAt(0)}
                                         </div>
                                         <img 
-                                            src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/participants/${p._id}/photo`} 
+                                            src={`${process.env.NEXT_PUBLIC_API_URL || 'https://musabaqa-app.onrender.com/api'}/participants/${p._id}/photo`} 
                                             alt={p.name} 
                                             loading="lazy"
                                             className="absolute inset-0 w-full h-full rounded-full object-cover border-2 border-purple-500/30"
