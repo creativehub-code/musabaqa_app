@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
 
 const judgeSchema = new mongoose.Schema(
   {
@@ -40,5 +41,17 @@ const judgeSchema = new mongoose.Schema(
     timestamps: true,
   },
 );
+
+// Hash password before saving (only if modified)
+judgeSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
+  this.password = await bcrypt.hash(this.password, 10);
+  next();
+});
+
+// Securely compare entered password with hashed password in DB
+judgeSchema.methods.matchPassword = async function (enteredPassword) {
+  return await bcrypt.compare(enteredPassword, this.password);
+};
 
 module.exports = mongoose.model("Judge", judgeSchema);

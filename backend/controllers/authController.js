@@ -10,7 +10,7 @@ const login = async (req, res) => {
   try {
     // 1. Admin Check (Database) - by email
     const admin = await Admin.findOne({ email: identifier });
-    if (admin && admin.password === password) {
+    if (admin && (await admin.matchPassword(password))) {
       const token = signToken(admin._id, admin.role);
       res.cookie("token", token, {
         httpOnly: true,
@@ -30,7 +30,7 @@ const login = async (req, res) => {
       judge = await Judge.findOne({ username: identifier }).populate("judgeGroupId");
     }
 
-    if (judge && judge.password === password) {
+    if (judge && (await judge.matchPassword(password))) {
       const token = signToken(judge._id, judge.role);
       res.cookie("token", token, {
         httpOnly: true,
