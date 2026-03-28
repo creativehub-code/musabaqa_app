@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Users, LayoutGrid, Award, Calendar, FileText, LogOut, CheckSquare, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { apiRequest } from '@/lib/api';
 
 import { AdminProvider } from './AdminContext';
 
@@ -13,18 +14,28 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   useEffect(() => {
-    // Basic Client-side Auth Check
-    const token = localStorage.getItem('token');
-    const role = localStorage.getItem('role');
+    const checkAuth = async () => {
+      try {
+        const data = await apiRequest('/auth/me', 'GET');
+        if (data.role !== 'admin') {
+          router.push('/login');
+        } else {
+          setAuthorized(true);
+        }
+      } catch (error) {
+        router.push('/login');
+      }
+    };
 
-    if (!token || role !== 'admin') {
-      router.push('/login');
-    } else {
-      setAuthorized(true);
-    }
+    checkAuth();
   }, [router]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await apiRequest('/auth/logout', 'POST');
+    } catch (e) {
+      console.error(e);
+    }
     localStorage.clear();
     router.push('/login');
   };

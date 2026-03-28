@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Award, LogOut } from 'lucide-react';
+import { apiRequest } from '@/lib/api';
 
 export default function JudgeLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -11,19 +12,29 @@ export default function JudgeLayout({ children }: { children: React.ReactNode })
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const role = localStorage.getItem('role');
-    const userData = localStorage.getItem('user');
+    const checkAuth = async () => {
+      try {
+        const data = await apiRequest('/auth/me', 'GET');
+        if (data.role !== 'judge') {
+          router.push('/login');
+        } else {
+          setAuthorized(true);
+          setUser(data.user);
+        }
+      } catch (error) {
+        router.push('/login');
+      }
+    };
 
-    if (!token || role !== 'judge') {
-      router.push('/login');
-    } else {
-      setAuthorized(true);
-      if (userData) setUser(JSON.parse(userData));
-    }
+    checkAuth();
   }, [router]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await apiRequest('/auth/logout', 'POST');
+    } catch (e) {
+      console.error(e);
+    }
     localStorage.clear();
     router.push('/login');
   };

@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const { protect, restrictTo } = require("../middleware/authMiddleware");
 const {
   getPrograms,
   createProgram,
@@ -7,7 +8,7 @@ const {
   deleteProgram,
 } = require("../controllers/programController");
 
-router.route("/").get(getPrograms).post(createProgram);
-router.route("/:id").patch(updateProgram).delete(deleteProgram);
+router.route("/").get(getPrograms).post(protect, restrictTo("admin"), createProgram);
+router.route("/:id").patch(protect, restrictTo("admin"), updateProgram).delete(protect, restrictTo("admin"), deleteProgram);
 
 module.exports = router;

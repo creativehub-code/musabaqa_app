@@ -1,5 +1,6 @@
 const Admin = require("../models/Admin");
 const Judge = require("../models/Judge");
+const { signToken } = require("../utils/authUtils");
 
 const login = async (req, res) => {
   let { email, password } = req.body;
@@ -10,9 +11,15 @@ const login = async (req, res) => {
     // 1. Admin Check (Database) - by email
     const admin = await Admin.findOne({ email: identifier });
     if (admin && admin.password === password) {
+      const token = signToken(admin._id, admin.role);
+      res.cookie("token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      });
       return res.json({
-        token: `token-${admin._id}`,
-        role: "admin",
+        role: admin.role,
         user: { email: admin.email, name: admin.name },
       });
     }
@@ -24,9 +31,15 @@ const login = async (req, res) => {
     }
 
     if (judge && judge.password === password) {
+      const token = signToken(judge._id, judge.role);
+      res.cookie("token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      });
       return res.json({
-        token: `token-${judge._id}`,
-        role: "judge",
+        role: judge.role,
         user: {
           _id: judge._id,
           email: judge.email || null,
@@ -66,4 +79,18 @@ const setup = async (req, res) => {
   }
 };
 
-module.exports = { login, setup };
+const getMe = async (req, res) => {
+  try {
+    // req.user is set by protect middleware
+    res.json({ role: req.user.role, user: req.user });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const logout = (req, res) => {
+  res.clearCookie("token");
+  res.json({ message: "Logged out successfully" });
+};
+
+module.exports = { login, setup, getMe, logout };

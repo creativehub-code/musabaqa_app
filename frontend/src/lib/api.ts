@@ -9,15 +9,9 @@ const getBaseUrl = () => {
 const API_BASE_URL = getBaseUrl();
 
 export const apiRequest = async (endpoint: string, method: string = 'GET', body?: any) => {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  
   const headers: any = {
     'Content-Type': 'application/json',
   };
-
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`; // Backend doesn't verify yet but good practice
-  }
 
   const fullUrl = `${API_BASE_URL}${endpoint}`;
   console.log(`Making request to: ${fullUrl} [${method}]`);
@@ -25,6 +19,7 @@ export const apiRequest = async (endpoint: string, method: string = 'GET', body?
   const response = await fetch(fullUrl, {
     method,
     headers,
+    credentials: 'include',
     body: body ? JSON.stringify(body) : undefined,
     cache: 'no-store', // Disable caching completely for judge isolation and dynamic data
   });

@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const { protect, restrictTo } = require("../middleware/authMiddleware");
 const {
   getParticipants,
   getParticipantsByLanguage,
@@ -16,12 +17,12 @@ const {
 
 router.route("/by-language").get(getParticipantsByLanguage);
 router.route("/:id/photo").get(getParticipantPhoto);
-router.route("/").get(getParticipants).post(createParticipant);
+router.route("/").get(getParticipants).post(protect, restrictTo("admin"), createParticipant);
 
 router
   .route("/:id")
   .get(getParticipantById)
-  .put(updateParticipant)
-  .delete(deleteParticipant);
+  .put(protect, restrictTo("admin"), updateParticipant)
+  .delete(protect, restrictTo("admin"), deleteParticipant);
 
 module.exports = router;

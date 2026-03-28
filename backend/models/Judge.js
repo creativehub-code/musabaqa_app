@@ -29,6 +29,12 @@ const judgeSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "JudgeGroup",
     },
+    role: {
+      type: String,
+      enum: ["admin", "judge"],
+      default: "judge",
+      required: true,
+    },
   },
   {
     timestamps: true,

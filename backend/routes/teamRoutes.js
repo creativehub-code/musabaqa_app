@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const { protect, restrictTo } = require("../middleware/authMiddleware");
 const {
   getTeams,
   getTeamById,
@@ -8,8 +9,8 @@ const {
   deleteTeam,
 } = require("../controllers/teamController");
 
-router.route("/").get(getTeams).post(createTeam);
+router.route("/").get(getTeams).post(protect, restrictTo("admin"), createTeam);
 
-router.route("/:id").get(getTeamById).put(updateTeam).delete(deleteTeam);
+router.route("/:id").get(getTeamById).put(protect, restrictTo("admin"), updateTeam).delete(protect, restrictTo("admin"), deleteTeam);
 
 module.exports = router;

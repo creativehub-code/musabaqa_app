@@ -19,6 +19,7 @@ export default function JudgeGroupsPage() {
   const [groupName, setGroupName] = useState('');
   const [judgesInput, setJudgesInput] = useState([{ name: '', email: '', password: '' }]);
   const [assignedProgramIds, setAssignedProgramIds] = useState<string[]>([]);
+  const [langFilter, setLangFilter] = useState(''); // '' = All
 
   const fetchJudgeGroups = async () => {
     try {
@@ -96,10 +97,11 @@ export default function JudgeGroupsPage() {
         assignedProgramIds
       });
       
-      setShowModal(false);
-      setGroupName('');
-      setJudgesInput([{ name: '', email: '', password: '' }]);
-      setAssignedProgramIds([]);
+              setShowModal(false);
+              setGroupName('');
+              setJudgesInput([{ name: '', email: '', password: '' }]);
+              setAssignedProgramIds([]);
+              setLangFilter('');
       fetchJudgeGroups(); // Refresh list
     } catch (error: any) {
       alert(error.message);
@@ -133,6 +135,7 @@ export default function JudgeGroupsPage() {
           setShowEditModal(false);
           setEditingGroupId(null);
           setAssignedProgramIds([]);
+          setLangFilter('');
           fetchJudgeGroups(); // Refresh
       } catch(error: any) {
           alert(error.message);
@@ -442,11 +445,28 @@ export default function JudgeGroupsPage() {
                         {assignedProgramIds.length} <span className="text-gray-500">Selected</span>
                     </span>
                 </div>
+                {/* Language Filter Pills */}
+                <div className="flex flex-wrap gap-2">
+                  {['', 'Malayalam', 'English', 'Urdu', 'Arabic'].map(lang => (
+                    <button
+                      key={lang || 'all'}
+                      type="button"
+                      onClick={() => setLangFilter(lang)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
+                        langFilter === lang
+                          ? 'bg-purple-600 border-purple-500 text-white shadow-lg shadow-purple-900/30'
+                          : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-white'
+                      }`}
+                    >
+                      {lang || 'All'}
+                    </button>
+                  ))}
+                </div>
                 <div className="bg-black/20 border border-white/5 rounded-2xl p-2 max-h-64 overflow-y-auto custom-scrollbar space-y-1 relative">
-                  {programAssignmentStatus.length === 0 ? (
+                  {programAssignmentStatus.filter((p: any) => !langFilter || p.language === langFilter).length === 0 ? (
                       <div className="text-sm text-gray-500 italic text-center py-8">No programs available</div>
                   ) : (
-                      programAssignmentStatus.map((p: any) => {
+                      programAssignmentStatus.filter((p: any) => !langFilter || p.language === langFilter).map((p: any) => {
                         const isAlreadyAssigned = !!p.assignedToGroupName;
                         return (
                         <label key={p._id} className={`flex items-center gap-4 py-3 px-4 rounded-xl transition-all duration-200 ${isAlreadyAssigned ? 'opacity-50 cursor-not-allowed bg-red-900/5 border border-red-500/10' : 'cursor-pointer hover:bg-white/5 group border border-transparent hover:border-white/5'}`}>
@@ -533,10 +553,27 @@ export default function JudgeGroupsPage() {
                </p>
 
               <div className="bg-black/20 border border-white/5 rounded-2xl p-2 overflow-y-auto custom-scrollbar space-y-1 flex-1 relative">
-                  {programAssignmentStatus.length === 0 ? (
+                  {/* Language Filter Pills */}
+                  <div className="flex flex-wrap gap-2 p-2 pb-3 border-b border-white/5 mb-1">
+                    {['', 'Malayalam', 'English', 'Urdu', 'Arabic'].map(lang => (
+                      <button
+                        key={lang || 'all'}
+                        type="button"
+                        onClick={() => setLangFilter(lang)}
+                        className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
+                          langFilter === lang
+                            ? 'bg-pink-600 border-pink-500 text-white shadow-lg shadow-pink-900/30'
+                            : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-white'
+                        }`}
+                      >
+                        {lang || 'All'}
+                      </button>
+                    ))}
+                  </div>
+                  {programAssignmentStatus.filter((p: any) => !langFilter || p.language === langFilter).length === 0 ? (
                       <div className="text-sm text-gray-500 italic text-center py-8">No programs available</div>
                   ) : (
-                      programAssignmentStatus.map((p: any) => {
+                      programAssignmentStatus.filter((p: any) => !langFilter || p.language === langFilter).map((p: any) => {
                         // In edit mode, we only disable if it's assigned to a DIFFERENT group
                         const editingGroup = judgeGroups.find(g => g._id === editingGroupId);
                         const isAssignedToOtherGroup = p.assignedToGroupName && p.assignedToGroupName !== editingGroup?.name;
