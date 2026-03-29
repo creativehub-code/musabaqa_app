@@ -43,10 +43,9 @@ const judgeSchema = new mongoose.Schema(
 );
 
 // Hash password before saving (only if modified)
-judgeSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+judgeSchema.pre("save", async function () {
+  if (!this.isModified("password")) return;
   this.password = await bcrypt.hash(this.password, 10);
-  next();
 });
 
 // Securely compare entered password with hashed password in DB

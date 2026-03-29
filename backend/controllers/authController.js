@@ -56,6 +56,7 @@ const login = async (req, res) => {
 
     res.status(401).json({ message: "Invalid credentials" });
   } catch (error) {
+    require('fs').writeFileSync('tmp_login_error.txt', error.stack || error.message);
     res.status(500).json({ message: error.message });
   }
 };
