@@ -43,7 +43,8 @@ const getMe = async (req, res) => {
 // @access  Public (should be Admin)
 const createJudge = async (req, res) => {
   let { name, email, password, assignedProgramIds } = req.body;
-  if (email) email = email.trim();
+  if (email) email = email.trim().toLowerCase();
+  if (password) password = password.trim();
 
   try {
     const judgeExists = await Judge.findOne({ email });

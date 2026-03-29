@@ -4,12 +4,15 @@ const { signToken } = require("../utils/authUtils");
 
 const login = async (req, res) => {
   let { email, password } = req.body;
-  // Support both email and username fields
-  const identifier = email ? email.trim() : '';
+  // Support both email and username fields, trim and lowercase for consistency
+  const identifier = email ? email.trim().toLowerCase() : "";
+  if (password) password = password.trim();
 
   try {
-    // 1. Admin Check (Database) - by email
-    const admin = await Admin.findOne({ email: identifier });
+    // 1. Admin Check (Database) - by email (case-insensitive)
+    const admin = await Admin.findOne({ 
+      email: { $regex: new RegExp(`^${identifier}$`, "i") } 
+    });
     if (admin && (await admin.matchPassword(password))) {
       const token = signToken(admin._id, admin.role);
       res.cookie("token", token, {
@@ -25,9 +28,14 @@ const login = async (req, res) => {
     }
 
     // 2. Judge Check - try email first, then username
-    let judge = await Judge.findOne({ email: identifier }).populate("judgeGroupId");
+    let judge = await Judge.findOne({ 
+      email: { $regex: new RegExp(`^${identifier}$`, "i") } 
+    }).populate("judgeGroupId");
+    
     if (!judge) {
-      judge = await Judge.findOne({ username: identifier }).populate("judgeGroupId");
+      judge = await Judge.findOne({ 
+        username: { $regex: new RegExp(`^${identifier}$`, "i") } 
+      }).populate("judgeGroupId");
     }
 
     if (judge && (await judge.matchPassword(password))) {
@@ -71,8 +79,9 @@ const setup = async (req, res) => {
     }
 
     let { name, email, password } = req.body;
-    if (email) email = email.trim();
-    const admin = await Admin.create({ name, email, password }); // Ideally hash password here
+    if (email) email = email.trim().toLowerCase();
+    if (password) password = password.trim();
+    const admin = await Admin.create({ name, email, password });
 
     res.status(201).json({ message: "Admin created successfully", admin });
   } catch (error) {
