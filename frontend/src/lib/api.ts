@@ -1,12 +1,15 @@
 const getBaseUrl = () => {
-  let url = process.env.NEXT_PUBLIC_API_URL || 'https://musabaqa-app.onrender.com/api';
+  // Use the environment variable if available, otherwise fallback to localhost for development
+  let url = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+  
   if (!url.startsWith('http')) {
     url = `https://${url}`;
   }
   return url.replace(/\/$/, ''); // Remove trailing slash if present
 };
 
-const API_BASE_URL = getBaseUrl();
+export const API_BASE_URL = getBaseUrl();
+console.log(`API Base URL: ${API_BASE_URL}`);
 
 export const apiRequest = async (endpoint: string, method: string = 'GET', body?: any) => {
   const headers: any = {

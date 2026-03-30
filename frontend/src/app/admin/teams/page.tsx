@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { apiRequest } from '@/lib/api';
+import { apiRequest, API_BASE_URL } from '@/lib/api';
 import { X, Trash2, Shield, Users, Trophy, Plus, ChevronRight } from 'lucide-react';
 import { useAdminData } from '../AdminContext';
 
@@ -290,7 +290,7 @@ export default function TeamsPage() {
                                          {/* Image */}
                                         <div className="w-16 h-16 rounded-lg overflow-hidden border border-[#2D283E] bg-gray-800 shrink-0 z-10">
                                              <img 
-                                                src={`${process.env.NEXT_PUBLIC_API_URL || 'https://musabaqa-app.onrender.com/api'}/participants/${p._id}/photo`} 
+                                                src={`${API_BASE_URL}/participants/${p._id}/photo`} 
                                                 alt={p.name} 
                                                 loading="lazy"
                                                 className="w-full h-full object-cover"

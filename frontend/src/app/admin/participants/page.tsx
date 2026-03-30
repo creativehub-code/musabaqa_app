@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
-import { apiRequest } from '@/lib/api';
+import { apiRequest, API_BASE_URL } from '@/lib/api';
 import { Trash2, Plus, X, User, Users, Flag, Save, Layers, Grid, FileText, Globe, Image, Upload } from 'lucide-react';
 import { useAdminData } from '../AdminContext';
 
@@ -23,7 +23,7 @@ const ParticipantRow = React.memo(({ p, index, displayIndex, hoveredParticipant,
                         {p.name.charAt(0)}
                     </div>
                     <img 
-                        src={`${process.env.NEXT_PUBLIC_API_URL || 'https://musabaqa-app.onrender.com/api'}/participants/${p._id}/photo`} 
+                        src={`${API_BASE_URL}/participants/${p._id}/photo`} 
                         alt={p.name} 
                         loading="lazy"
                         className="absolute inset-0 w-full h-full rounded-full object-cover border-2 border-purple-500/30"
@@ -125,7 +125,7 @@ export default function ParticipantsPage() {
         try {
           // This now only returns text details, image is separate URL
           const fullData = await apiRequest(`/participants/${viewParticipant._id}`);
-          setViewParticipant((current: any) => current?._id === fullData._id ? { ...fullData, image: `${process.env.NEXT_PUBLIC_API_URL || 'https://musabaqa-app.onrender.com/api'}/participants/${fullData._id}/photo` } : current);
+          setViewParticipant((current: any) => current?._id === fullData._id ? { ...fullData, image: `${API_BASE_URL}/participants/${fullData._id}/photo` } : current);
         } catch (e) {
           console.error("Failed to fetch full participant details", e);
         } finally {
@@ -525,7 +525,7 @@ export default function ParticipantsPage() {
                     {/* Image */}
                     <div className="w-24 h-24 rounded-xl overflow-hidden border-2 border-[#2D283E] bg-gray-800 shrink-0 z-10">
                          <img 
-                            src={`${process.env.NEXT_PUBLIC_API_URL || 'https://musabaqa-app.onrender.com/api'}/participants/${p._id}/photo`} 
+                            src={`${API_BASE_URL}/participants/${p._id}/photo`} 
                             alt={p.name} 
                             loading="lazy"
                             className="w-full h-full object-cover"
@@ -710,7 +710,7 @@ export default function ParticipantsPage() {
                              {/* We use specific timestamp to bust cache if needed, or just ID */}
                              <img 
                                 key={viewParticipant._id}
-                                src={`${process.env.NEXT_PUBLIC_API_URL || 'https://musabaqa-app.onrender.com/api'}/participants/${viewParticipant._id}/photo`} 
+                                src={`${API_BASE_URL}/participants/${viewParticipant._id}/photo`} 
                                 alt={viewParticipant.name} 
                                 className="w-full h-full object-cover"
                                 onError={(e) => {

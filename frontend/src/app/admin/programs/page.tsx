@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { apiRequest } from '@/lib/api';
+import { apiRequest, API_BASE_URL } from '@/lib/api';
 import { Trash2, Plus, X, Layers, Globe, FileText, CheckCircle, Users } from 'lucide-react';
 import { useAdminData } from '../AdminContext';
 
@@ -232,7 +232,7 @@ export default function ProgramsPage() {
                                             {p.name.charAt(0)}
                                         </div>
                                         <img 
-                                            src={`${process.env.NEXT_PUBLIC_API_URL || 'https://musabaqa-app.onrender.com/api'}/participants/${p._id}/photo`} 
+                                            src={`${API_BASE_URL}/participants/${p._id}/photo`} 
                                             alt={p.name} 
                                             loading="lazy"
                                             className="absolute inset-0 w-full h-full rounded-full object-cover border-2 border-purple-500/30"
