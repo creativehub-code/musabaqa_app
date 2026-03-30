@@ -7,9 +7,8 @@ const {
   calculateScores,
 } = require("../controllers/markController");
 
-router.use(protect);
-router.post("/", restrictTo("admin", "judge"), submitMark);
-router.get("/:programId", restrictTo("admin", "judge"), getMarksByProgram);
-router.post("/calculate/:programId", restrictTo("admin"), calculateScores);
+router.post("/", protect, restrictTo("admin", "judge"), submitMark);
+router.get("/:programId", getMarksByProgram);
+router.post("/calculate/:programId", protect, restrictTo("admin"), calculateScores);
 
 module.exports = router;
