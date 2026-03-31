@@ -18,7 +18,6 @@ const PORT = process.env.PORT || 5000;
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   "http://localhost:3000",
-  "https://musabaqa-app.vercel.app",
 ].filter(Boolean);
 
 app.use(
