@@ -25,6 +25,7 @@ const judgeSchema = new mongoose.Schema(
     password: {
       type: String,
       required: true,
+      select: false,
     },
     judgeGroupId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -35,6 +36,9 @@ const judgeSchema = new mongoose.Schema(
       enum: ["admin", "judge"],
       default: "judge",
       required: true,
+    },
+    lastLogin: {
+      type: Date,
     },
   },
   {

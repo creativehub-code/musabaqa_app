@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Users, LayoutGrid, Award, Calendar, FileText, LogOut, CheckSquare, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Users, LayoutGrid, Award, Calendar, FileText, LogOut, CheckSquare, PanelLeftClose, PanelLeftOpen, BarChart3 } from 'lucide-react';
 import { apiRequest } from '@/lib/api';
 
 import { AdminProvider } from './AdminContext';
@@ -30,13 +30,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     checkAuth();
   }, [router]);
 
-  const handleLogout = async () => {
-    try {
-      await apiRequest('/auth/logout', 'POST');
-    } catch (e) {
-      console.error(e);
-    }
-    localStorage.clear();
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    localStorage.removeItem('user');
     router.push('/login');
   };
 
@@ -78,7 +75,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <NavLink href="/admin/programs" icon={<Calendar size={20}/>}>Programs</NavLink>
             <NavLink href="/admin/judges" icon={<Users size={20}/>}>Judges</NavLink>
             <NavLink href="/admin/marks" icon={<CheckSquare size={20}/>}>Review Marks</NavLink>
-            <NavLink href="/admin/export" icon={<FileText size={20}/>}>Reports & Export</NavLink>
+            <NavLink href="/admin/export" icon={<BarChart3 size={20}/>}>Individual Marks</NavLink>
           </nav>
 
           <div className="p-4 border-t border-gray-800">

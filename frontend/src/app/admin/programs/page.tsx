@@ -135,6 +135,11 @@ export default function ProgramsPage() {
                                             <td className="p-4 text-gray-500">{arr.length - index}</td>
                                             <td className="p-4 font-medium text-white text-lg group-hover:text-purple-400 transition-colors flex items-center gap-2">
                                                 {p.name}
+                                                {p.isConversation && (
+                                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-full">
+                                                        <Users size={10} /> Pair
+                                                    </span>
+                                                )}
                                                 <Users size={14} className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-500" />
                                             </td>
                                             <td className="p-4 text-gray-400">{p.groupId?.name || '-'}</td>
@@ -283,7 +288,8 @@ function CreateProgramModal({ isOpen, onClose, defaultLanguage, groups, onSucces
         name: '',
         groupId: '',
         status: 'upcoming',
-        language: defaultLanguage || 'English'
+        language: defaultLanguage || 'English',
+        isConversation: false,
     });
     const [createMultiple, setCreateMultiple] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -407,6 +413,27 @@ function CreateProgramModal({ isOpen, onClose, defaultLanguage, groups, onSucces
                                 ))}
                             </div>
                         </div>
+
+                        {/* Conversation Program Toggle */}
+                        <label className="flex items-start gap-3 p-4 rounded-xl bg-[#13111C] border border-[#2D283E] cursor-pointer hover:bg-[#1A1825] hover:border-indigo-500/30 transition-all group">
+                            <div className={`w-5 h-5 rounded border flex items-center justify-center mt-0.5 transition-colors ${
+                                form.isConversation ? 'bg-indigo-600 border-indigo-500' : 'border-gray-600 group-hover:border-indigo-400'
+                            }`}>
+                                {form.isConversation && <CheckCircle size={12} className="text-white" />}
+                            </div>
+                            <input
+                                type="checkbox"
+                                checked={form.isConversation}
+                                onChange={e => setForm({...form, isConversation: e.target.checked})}
+                                className="hidden"
+                            />
+                            <div>
+                                <p className="text-sm font-bold text-white flex items-center gap-2">
+                                    <Users size={14} className="text-indigo-400" /> Group Program
+                                </p>
+                                <p className="text-xs text-gray-500 mt-0.5">Requires multiple participants (same team &amp; group) registered as a group</p>
+                            </div>
+                        </label>
                     </div>
 
                     <div className="pt-4 border-t border-[#2D283E] flex flex-col gap-4">

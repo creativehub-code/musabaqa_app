@@ -25,6 +25,11 @@ const programSchema = new mongoose.Schema(
       required: true,
       default: "English",
     },
+    // When true, this program requires exactly two participants registered as a pair
+    isConversation: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,

@@ -33,51 +33,39 @@ export default function PublicViewer() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const teamsData = await apiRequest('/teams');
-        // Sort teams by totalScore descending
-        teamsData.sort((a: Team, b: Team) => b.totalScore - a.totalScore);
+        // 1. Fetch public team leaderboard
+        const teamsData = await apiRequest('/public/teams/leaderboard');
         setTeams(teamsData);
 
-        // Fetch Programs to find the last completed one
-        const programsData: Program[] = await apiRequest('/programs');
-        const completedPrograms = programsData
-          .filter(p => p.status === 'completed')
-          .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+        // 2. Fetch public programs list to find the latest completed one
+        const programsData: Program[] = await apiRequest('/public/programs');
+        
+        if (programsData.length > 0) {
+          const lastProgram = programsData[0]; // Already sorted by updatedAt desc in backend
+          
+          // 3. Fetch public results for the last program
+          const resultsData = await apiRequest(`/public/results/${lastProgram._id}`);
 
-        if (completedPrograms.length > 0) {
-          const lastProgram = completedPrograms[0];
-          const marksData = await apiRequest(`/marks/${lastProgram._id}`);
+          // Map the ProgramResult schema to our ParticipantResult interface
+          const mappedResults: ParticipantResult[] = resultsData.map((res: any) => ({
+            participantId: res.participantId?._id || 'N/A',
+            name: res.participantId?.name || 'N/A',
+            chestNumber: res.participantId?.chestNumber || 'N/A',
+            teamName: res.participantId?.teamId?.name || 'No Team',
+            totalScore: res.positionPoints || 0
+          }));
 
-          // Aggregate marks by participant
-          const participantScores: { [key: string]: ParticipantResult } = {};
-
-          marksData.forEach((mark: any) => {
-            const pId = mark.participantId._id;
-            if (!participantScores[pId]) {
-              participantScores[pId] = {
-                participantId: pId,
-                name: mark.participantId.name,
-                chestNumber: mark.participantId.chestNumber,
-                teamName: mark.participantId.teamId?.name || 'No Team',
-                totalScore: 0
-              };
-            }
-            participantScores[pId].totalScore += mark.marksGiven;
-          });
-
-          // Convert to array and sort
-          const resultsArray = Object.values(participantScores).sort((a, b) => b.totalScore - a.totalScore);
           setLatestResult({
             programName: lastProgram.name,
-            results: resultsArray.slice(0, 5) // Show top 5 of the last program
+            results: mappedResults.slice(0, 5)
           });
         } else {
-            setLatestResult(null);
+          setLatestResult(null);
         }
 
         setLoading(false);
       } catch (err) {
-        console.error(err);
+        console.error('Public View Data Error:', err);
         setLoading(false);
       }
     };

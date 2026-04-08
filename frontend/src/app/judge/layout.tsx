@@ -29,13 +29,10 @@ export default function JudgeLayout({ children }: { children: React.ReactNode })
     checkAuth();
   }, [router]);
 
-  const handleLogout = async () => {
-    try {
-      await apiRequest('/auth/logout', 'POST');
-    } catch (e) {
-      console.error(e);
-    }
-    localStorage.clear();
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    localStorage.removeItem('user');
     router.push('/login');
   };
 

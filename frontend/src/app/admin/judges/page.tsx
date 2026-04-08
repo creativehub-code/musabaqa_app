@@ -6,11 +6,16 @@ import { Plus, Trash2, Users, X, UserMinus, Edit3, Globe, KeyRound } from 'lucid
 import { useAdminData } from '../AdminContext';
 
 export default function JudgeGroupsPage() {
-  const { programs } = useAdminData(); // Use cached programs
-  const [judgeGroups, setJudgeGroups] = useState<any[]>([]);
-  const [allJudges, setAllJudges] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadingJudges, setLoadingJudges] = useState(true);
+  const { 
+    programs, 
+    judgeGroups, 
+    judges: allJudges, 
+    groups,
+    loading: contextLoading,
+    refreshJudgeGroups,
+    refreshJudges
+  } = useAdminData(); // Use cached data
+  
   const [showModal, setShowModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
@@ -20,33 +25,11 @@ export default function JudgeGroupsPage() {
   const [judgesInput, setJudgesInput] = useState([{ name: '', email: '', password: '' }]);
   const [assignedProgramIds, setAssignedProgramIds] = useState<string[]>([]);
   const [langFilter, setLangFilter] = useState(''); // '' = All
+  
+  // Search States
+  const [panelSearchQ, setPanelSearchQ] = useState('');
+  const [programSearchQ, setProgramSearchQ] = useState('');
 
-  const fetchJudgeGroups = async () => {
-    try {
-      const data = await apiRequest('/judgeGroups');
-      setJudgeGroups(data);
-      setLoading(false);
-    } catch (error) {
-      console.error(error);
-      setLoading(false);
-    }
-  };
-
-  const fetchAllJudges = async () => {
-    try {
-      const data = await apiRequest('/judges');
-      setAllJudges(Array.isArray(data) ? data : []);
-      setLoadingJudges(false);
-    } catch (error) {
-      console.error(error);
-      setLoadingJudges(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchJudgeGroups();
-    fetchAllJudges();
-  }, []);
 
   // Compute assigned programs to disable/sort them
   const programAssignmentStatus = useMemo(() => {
@@ -102,7 +85,9 @@ export default function JudgeGroupsPage() {
               setJudgesInput([{ name: '', email: '', password: '' }]);
               setAssignedProgramIds([]);
               setLangFilter('');
-      fetchJudgeGroups(); // Refresh list
+              setProgramSearchQ('');
+      refreshJudgeGroups(); // Refresh global list
+      refreshJudges(); // Also refresh judges list
     } catch (error: any) {
       alert(error.message);
     }
@@ -112,7 +97,8 @@ export default function JudgeGroupsPage() {
     if (!confirm('Are you sure you want to delete this judge group? All associated judges and their access will be removed.')) return;
     try {
       await apiRequest(`/judgeGroups/${id}`, 'DELETE');
-      fetchJudgeGroups();
+      refreshJudgeGroups();
+      refreshJudges();
     } catch (error: any) {
        alert(error.message);
     }
@@ -121,6 +107,7 @@ export default function JudgeGroupsPage() {
   const openEditModal = (group: any) => {
       setEditingGroupId(group._id);
       setAssignedProgramIds(group.assignedPrograms?.map((p: any) => p._id) || []);
+      setProgramSearchQ('');
       setShowEditModal(true);
   };
 
@@ -136,7 +123,8 @@ export default function JudgeGroupsPage() {
           setEditingGroupId(null);
           setAssignedProgramIds([]);
           setLangFilter('');
-          fetchJudgeGroups(); // Refresh
+          setProgramSearchQ('');
+          refreshJudgeGroups(); // Refresh global list
       } catch(error: any) {
           alert(error.message);
       }
@@ -159,7 +147,7 @@ export default function JudgeGroupsPage() {
           </div>
         </div>
         <button
-          onClick={() => setShowModal(true)}
+          onClick={() => { setShowModal(true); setProgramSearchQ(''); }}
           className="group relative flex items-center gap-2 bg-[#13111C] hover:bg-[#1A1825] border border-gray-800 hover:border-purple-500/50 text-white px-6 py-3 rounded-xl font-bold transition-all duration-300 shadow-xl overflow-hidden"
         >
           {/* Button Hover gradient background */}
@@ -169,11 +157,23 @@ export default function JudgeGroupsPage() {
         </button>
       </div>
 
-      {loading ? (
+      {/* Main Panel Search */}
+      <div className="mb-6 relative max-w-md">
+          <Globe className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
+          <input 
+              type="text"
+              placeholder="Search Judge Panels..."
+              value={panelSearchQ}
+              onChange={e => setPanelSearchQ(e.target.value)}
+              className="w-full pl-12 pr-4 py-3 bg-[#13111C]/80 border border-gray-800 rounded-xl text-white focus:border-purple-500 focus:outline-none transition-colors"
+          />
+      </div>
+
+      {contextLoading && judgeGroups.length === 0 ? (
         <div className="text-gray-500">Loading judge groups...</div>
       ) : (
         <div className="grid lg:grid-cols-2 gap-6 relative z-10">
-          {judgeGroups.map((group) => (
+          {judgeGroups.filter(g => g.name.toLowerCase().includes(panelSearchQ.toLowerCase())).map((group) => (
             <div 
               key={group._id} 
               className="group relative bg-[#13111C]/80 backdrop-blur-xl p-6 rounded-2xl border border-white/5 hover:border-purple-500/30 transition-all duration-300 hover:shadow-2xl hover:shadow-purple-900/20 hover:-translate-y-1 overflow-hidden"
@@ -287,7 +287,7 @@ export default function JudgeGroupsPage() {
           </div>
         </div>
 
-        {loadingJudges ? (
+        {contextLoading && allJudges.length === 0 ? (
           <div className="text-gray-500 text-center py-8">Loading judges...</div>
         ) : allJudges.filter(j => j.username).length === 0 ? (
           <div className="text-center py-12 bg-[#13111C]/50 rounded-2xl border border-dashed border-gray-800">
@@ -445,28 +445,37 @@ export default function JudgeGroupsPage() {
                         {assignedProgramIds.length} <span className="text-gray-500">Selected</span>
                     </span>
                 </div>
-                {/* Language Filter Pills */}
-                <div className="flex flex-wrap gap-2">
-                  {['', 'Malayalam', 'English', 'Urdu', 'Arabic'].map(lang => (
-                    <button
-                      key={lang || 'all'}
-                      type="button"
-                      onClick={() => setLangFilter(lang)}
-                      className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
-                        langFilter === lang
-                          ? 'bg-purple-600 border-purple-500 text-white shadow-lg shadow-purple-900/30'
-                          : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-white'
-                      }`}
-                    >
-                      {lang || 'All'}
-                    </button>
-                  ))}
+                {/* Search & Language Filter Pills */}
+                <div className="flex flex-col gap-3">
+                  <input 
+                      type="text"
+                      placeholder="Search programs by name..."
+                      value={programSearchQ}
+                      onChange={e => setProgramSearchQ(e.target.value)}
+                      className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-sm text-white focus:border-purple-500 outline-none transition-all placeholder-gray-600"
+                  />
+                  <div className="flex flex-wrap gap-2">
+                    {['', 'Malayalam', 'English', 'Urdu', 'Arabic'].map(lang => (
+                      <button
+                        key={lang || 'all'}
+                        type="button"
+                        onClick={() => setLangFilter(lang)}
+                        className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
+                          langFilter === lang
+                            ? 'bg-purple-600 border-purple-500 text-white shadow-lg shadow-purple-900/30'
+                            : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-white'
+                        }`}
+                      >
+                        {lang || 'All'}
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 <div className="bg-black/20 border border-white/5 rounded-2xl p-2 max-h-64 overflow-y-auto custom-scrollbar space-y-1 relative">
-                  {programAssignmentStatus.filter((p: any) => !langFilter || p.language === langFilter).length === 0 ? (
+                  {programAssignmentStatus.filter((p: any) => (!langFilter || p.language === langFilter) && p.name.toLowerCase().includes(programSearchQ.toLowerCase())).length === 0 ? (
                       <div className="text-sm text-gray-500 italic text-center py-8">No programs available</div>
                   ) : (
-                      programAssignmentStatus.filter((p: any) => !langFilter || p.language === langFilter).map((p: any) => {
+                      programAssignmentStatus.filter((p: any) => (!langFilter || p.language === langFilter) && p.name.toLowerCase().includes(programSearchQ.toLowerCase())).map((p: any) => {
                         const isAlreadyAssigned = !!p.assignedToGroupName;
                         return (
                         <label key={p._id} className={`flex items-center gap-4 py-3 px-4 rounded-xl transition-all duration-200 ${isAlreadyAssigned ? 'opacity-50 cursor-not-allowed bg-red-900/5 border border-red-500/10' : 'cursor-pointer hover:bg-white/5 group border border-transparent hover:border-white/5'}`}>
@@ -496,11 +505,16 @@ export default function JudgeGroupsPage() {
                                         </span>
                                     )}
                                 </div>
-                                {p.language && (
-                                    <span className="text-[10px] text-gray-500 uppercase tracking-wider font-bold mt-1">
-                                        Language: <span className="text-gray-400">{p.language}</span>
+                                <div className="flex items-center gap-3 mt-1">
+                                    {p.language && (
+                                        <span className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">
+                                            Language: <span className="text-gray-400">{p.language}</span>
+                                        </span>
+                                    )}
+                                    <span className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">
+                                        Group: <span className="text-purple-400">{p.groupId?.name || groups.find(g => g._id === p.groupId)?.name || 'Unknown'}</span>
                                     </span>
-                                )}
+                                </div>
                             </div>
                         </label>
                       )})
@@ -553,27 +567,36 @@ export default function JudgeGroupsPage() {
                </p>
 
               <div className="bg-black/20 border border-white/5 rounded-2xl p-2 overflow-y-auto custom-scrollbar space-y-1 flex-1 relative">
-                  {/* Language Filter Pills */}
-                  <div className="flex flex-wrap gap-2 p-2 pb-3 border-b border-white/5 mb-1">
-                    {['', 'Malayalam', 'English', 'Urdu', 'Arabic'].map(lang => (
-                      <button
-                        key={lang || 'all'}
-                        type="button"
-                        onClick={() => setLangFilter(lang)}
-                        className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
-                          langFilter === lang
-                            ? 'bg-pink-600 border-pink-500 text-white shadow-lg shadow-pink-900/30'
-                            : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-white'
-                        }`}
-                      >
-                        {lang || 'All'}
-                      </button>
-                    ))}
+                  {/* Search & Language Filter Pills */}
+                  <div className="flex flex-col gap-3 p-2 pb-3 border-b border-white/5 mb-1">
+                    <input 
+                        type="text"
+                        placeholder="Search programs by name..."
+                        value={programSearchQ}
+                        onChange={e => setProgramSearchQ(e.target.value)}
+                        className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-sm text-white focus:border-pink-500 outline-none transition-all placeholder-gray-600"
+                    />
+                    <div className="flex flex-wrap gap-2">
+                      {['', 'Malayalam', 'English', 'Urdu', 'Arabic'].map(lang => (
+                        <button
+                          key={lang || 'all'}
+                          type="button"
+                          onClick={() => setLangFilter(lang)}
+                          className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${
+                            langFilter === lang
+                              ? 'bg-pink-600 border-pink-500 text-white shadow-lg shadow-pink-900/30'
+                              : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-white'
+                          }`}
+                        >
+                          {lang || 'All'}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  {programAssignmentStatus.filter((p: any) => !langFilter || p.language === langFilter).length === 0 ? (
+                  {programAssignmentStatus.filter((p: any) => (!langFilter || p.language === langFilter) && p.name.toLowerCase().includes(programSearchQ.toLowerCase())).length === 0 ? (
                       <div className="text-sm text-gray-500 italic text-center py-8">No programs available</div>
                   ) : (
-                      programAssignmentStatus.filter((p: any) => !langFilter || p.language === langFilter).map((p: any) => {
+                      programAssignmentStatus.filter((p: any) => (!langFilter || p.language === langFilter) && p.name.toLowerCase().includes(programSearchQ.toLowerCase())).map((p: any) => {
                         // In edit mode, we only disable if it's assigned to a DIFFERENT group
                         const editingGroup = judgeGroups.find(g => g._id === editingGroupId);
                         const isAssignedToOtherGroup = p.assignedToGroupName && p.assignedToGroupName !== editingGroup?.name;
@@ -606,11 +629,16 @@ export default function JudgeGroupsPage() {
                                         </span>
                                     )}
                                 </div>
-                                {p.language && (
-                                    <span className="text-[10px] text-gray-500 uppercase tracking-wider font-bold mt-1">
-                                        Language: <span className="text-gray-400">{p.language}</span>
+                                <div className="flex items-center gap-3 mt-1">
+                                    {p.language && (
+                                        <span className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">
+                                            Language: <span className="text-gray-400">{p.language}</span>
+                                        </span>
+                                    )}
+                                    <span className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">
+                                        Group: <span className="text-purple-400">{p.groupId?.name || groups.find(g => g._id === p.groupId)?.name || 'Unknown'}</span>
                                     </span>
-                                )}
+                                </div>
                             </div>
                         </label>
                       )})

@@ -20,6 +20,7 @@ export default function LoginPage() {
       // Send as 'email' — backend handles both email and username lookups
       const data = await apiRequest('/auth/login', 'POST', { email: identifier, password });
       
+      localStorage.setItem('token', data.token);
       localStorage.setItem('role', data.role);
       localStorage.setItem('user', JSON.stringify(data.user));
 

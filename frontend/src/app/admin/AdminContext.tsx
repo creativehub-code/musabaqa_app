@@ -8,11 +8,15 @@ interface AdminContextType {
   teams: any[];
   programs: any[];
   participants: any[]; // Cached participants
+  judges: any[]; // All individual judges
+  judgeGroups: any[]; // Panel groups
   loading: boolean;
   refreshGroups: () => Promise<void>;
   refreshTeams: () => Promise<void>;
   refreshPrograms: () => Promise<void>;
   refreshParticipants: () => Promise<void>;
+  refreshJudges: () => Promise<void>;
+  refreshJudgeGroups: () => Promise<void>;
   refreshAll: () => Promise<void>;
 }
 
@@ -23,6 +27,8 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
   const [teams, setTeams] = useState<any[]>([]);
   const [programs, setPrograms] = useState<any[]>([]);
   const [participants, setParticipants] = useState<any[]>([]);
+  const [judges, setJudges] = useState<any[]>([]);
+  const [judgeGroups, setJudgeGroups] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchGroups = async () => {
@@ -62,9 +68,34 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const fetchJudges = async () => {
+    try {
+      const data = await apiRequest('/judges');
+      setJudges(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error("Failed to fetch judges", e);
+    }
+  };
+
+  const fetchJudgeGroups = async () => {
+    try {
+      const data = await apiRequest('/judgeGroups');
+      setJudgeGroups(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error("Failed to fetch judge groups", e);
+    }
+  };
+
   const refreshAll = useCallback(async () => {
     setLoading(true);
-    await Promise.all([fetchGroups(), fetchTeams(), fetchPrograms(), fetchParticipants()]);
+    await Promise.all([
+        fetchGroups(), 
+        fetchTeams(), 
+        fetchPrograms(), 
+        fetchParticipants(),
+        fetchJudges(),
+        fetchJudgeGroups()
+    ]);
     setLoading(false);
   }, []);
 
@@ -78,11 +109,15 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       teams,
       programs,
       participants,
+      judges,
+      judgeGroups,
       loading,
       refreshGroups: fetchGroups,
       refreshTeams: fetchTeams,
       refreshPrograms: fetchPrograms,
       refreshParticipants: fetchParticipants,
+      refreshJudges: fetchJudges,
+      refreshJudgeGroups: fetchJudgeGroups,
       refreshAll
     }}>
       {children}

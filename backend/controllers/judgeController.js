@@ -18,23 +18,28 @@ const getJudges = async (req, res) => {
 // @access  Public (Should be protected)
 const getMe = async (req, res) => {
   try {
-    const judge = await Judge.findById(req.params.id).populate("judgeGroupId");
+    // Security: Only allow fetching the profile of the CURRENTLY logged-in user
+    // req.user is populated by the 'protect' middleware
+    const judge = await Judge.findById(req.user.id).populate("judgeGroupId");
+    
     if (!judge) {
-      return res.status(404).json({ message: "Judge not found" });
+      return res.status(404).json({ message: "User not found" });
     }
+    
     res.json({
       _id: judge._id,
       name: judge.name,
       email: judge.email || null,
       username: judge.username || null,
       category: judge.category || null,
+      role: judge.role,
       assignedPrograms: judge.judgeGroupId
         ? judge.judgeGroupId.assignedPrograms
         : [],
       judgeGroupId: judge.judgeGroupId ? judge.judgeGroupId._id : null,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 

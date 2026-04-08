@@ -15,12 +15,16 @@ const adminSchema = new mongoose.Schema(
     password: {
       type: String,
       required: true,
+      select: false,
     },
     role: {
       type: String,
       enum: ["admin", "judge"],
       default: "admin",
       required: true,
+    },
+    lastLogin: {
+      type: Date,
     },
   },
   {

@@ -9,6 +9,7 @@ const {
   createParticipant,
   updateParticipant,
   deleteParticipant,
+  searchEligible,
 } = require("../controllers/participantController");
 
 // For MVP, we might skip middleware for read, but should protect write.
@@ -17,6 +18,8 @@ const {
 
 router.route("/by-language").get(getParticipantsByLanguage);
 router.route("/:id/photo").get(getParticipantPhoto);
+// Eligible co-participant search for conversation programs — must be before /:id
+router.get("/search-eligible", protect, restrictTo("admin"), searchEligible);
 router.route("/").get(getParticipants).post(protect, restrictTo("admin"), createParticipant);
 
 router

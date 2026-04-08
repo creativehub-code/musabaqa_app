@@ -2,6 +2,58 @@ const Participant = require("../models/Participant");
 const Team = require("../models/Team");
 const Group = require("../models/Group");
 
+// @desc    Search for eligible co-participants for a conversation program
+// @route   GET /api/participants/search-eligible?q=<name|chestNo>&primaryId=<id>
+// @access  Admin
+const searchEligible = async (req, res) => {
+  try {
+    let { q, primaryId } = req.query;
+
+    if (!primaryId) {
+      return res.status(400).json({ message: "primaryId is required" });
+    }
+    // Sanitise: force string to prevent NoSQL injection
+    primaryId = String(primaryId);
+    q = q ? String(q).trim() : "";
+
+    // Fetch the primary participant to extract team + group constraints
+    const primary = await Participant.findById(primaryId).select("teamId groupId");
+    if (!primary) {
+      return res.status(404).json({ message: "Primary participant not found" });
+    }
+    if (!primary.teamId || !primary.groupId) {
+      return res.status(400).json({
+        message: "Primary participant must have a Team and Group assigned before searching for a partner",
+      });
+    }
+
+    // Build an OR query on name or chestNumber — case-insensitive
+    const searchFilter = q
+      ? {
+          $or: [
+            { name: { $regex: q, $options: "i" } },
+            { chestNumber: { $regex: q, $options: "i" } },
+          ],
+        }
+      : {};
+
+    const eligible = await Participant.find({
+      ...searchFilter,
+      teamId: primary.teamId,   // MUST be same team
+      groupId: primary.groupId, // MUST be same group
+      _id: { $ne: primaryId },  // Exclude the primary themselves
+    })
+      .select("-image")
+      .populate("teamId", "name")
+      .populate("groupId", "name")
+      .limit(20);
+
+    res.json(eligible);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // @desc    Get all participants
 // @route   GET /api/participants
 // @access  Public (Read-only), Admin/Judge (Read-only)
@@ -27,10 +79,13 @@ const getParticipants = async (req, res) => {
 // @access  Judge / Admin
 const getParticipantsByLanguage = async (req, res) => {
   try {
-    const { language } = req.query;
+    let { language } = req.query;
     if (!language) {
       return res.status(400).json({ message: "language query param required" });
     }
+    
+    // Security: Forced to be a string to prevent NoSQL injection (e.g., passing $ne: null)
+    language = String(language);
 
     // Find all programs with that language first
     const Program = require("../models/Program");
@@ -155,10 +210,20 @@ const updateParticipant = async (req, res) => {
       return res.status(404).json({ message: "Participant not found" });
     }
 
+    // Security: Whitelist fields to prevent mass assignment
+    const { name, chestNumber, teamId, groupId, programs, image } = req.body;
+    const updateData = {};
+    if (name !== undefined) updateData.name = name;
+    if (chestNumber !== undefined) updateData.chestNumber = chestNumber;
+    if (teamId !== undefined) updateData.teamId = teamId;
+    if (groupId !== undefined) updateData.groupId = groupId;
+    if (programs !== undefined) updateData.programs = programs;
+    if (image !== undefined) updateData.image = image;
+
     const updatedParticipant = await Participant.findByIdAndUpdate(
       req.params.id,
-      req.body,
-      { new: true },
+      updateData,
+      { new: true, runValidators: true },
     );
 
     res.json(updatedParticipant);
@@ -205,4 +270,6 @@ module.exports = {
   createParticipant,
   updateParticipant,
   deleteParticipant,
+  searchEligible,
 };
+

@@ -57,7 +57,22 @@ function MarkingInterface({ programIdParam }: { programIdParam: any }) {
             })
             : parts;
 
-        setParticipants(filteredParts);
+        let finalParticipants = filteredParts;
+        if (currentProg?.isConversation) {
+            try {
+                const pairs = await apiRequest(`/conversation-pairs/by-program/${programId}`);
+                // Transform pairs into composite rows
+                finalParticipants = pairs.map((pair: any) => ({
+                    _id: pair.primaryParticipantId._id || pair.primaryParticipantId, // Mark is assigned to primary
+                    chestNumber: pair.primaryParticipantId.chestNumber || filteredParts.find((p:any) => p._id === pair.primaryParticipantId)?.chestNumber,
+                    name: pair.participants.map((p:any) => p.name || filteredParts.find((f:any) => f._id === p)?.name).join(' & ')
+                }));
+            } catch (e) {
+                console.error("Error fetching conversation pairs", e);
+            }
+        }
+
+        setParticipants(finalParticipants);
 
         // Map existing marks by this judge
         const textMarks: {[key:string]: number} = {};

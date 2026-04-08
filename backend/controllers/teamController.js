@@ -59,4 +59,23 @@ const deleteTeam = async (req, res) => {
   }
 };
 
-module.exports = { getTeams, getTeamById, createTeam, updateTeam, deleteTeam };
+const getTeamLeaderboard = async (req, res) => {
+  try {
+    const teams = await Team.find()
+      .select("name totalScore")
+      .sort({ totalScore: -1 });
+    res.json(teams);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = {
+  getTeams,
+  getTeamById,
+  createTeam,
+  updateTeam,
+  deleteTeam,
+  getTeamLeaderboard,
+};
+

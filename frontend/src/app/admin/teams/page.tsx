@@ -11,6 +11,17 @@ export default function TeamsPage() {
   const [selectedTeam, setSelectedTeam] = useState<any>(null);
   const [filterGroup, setFilterGroup] = useState('All');
   const [displayLimit, setDisplayLimit] = useState(20);
+  const [viewParticipant, setViewParticipant] = useState<any>(null);
+
+  // Sync selectedTeam whenever context teams refresh (e.g. after verify & calculate)
+  // This keeps the detail panel's totalScore up to date without the admin re-clicking.
+  useEffect(() => {
+    if (!selectedTeam) return;
+    const fresh = teams.find((t: any) => t._id === selectedTeam._id);
+    if (fresh && fresh.totalScore !== selectedTeam.totalScore) {
+      setSelectedTeam(fresh);
+    }
+  }, [teams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -202,7 +213,7 @@ export default function TeamsPage() {
                     <tbody className="divide-y divide-[#2D283E]">
                          <>
                           {displayedParticipants.map((p: any, index: number) => (
-                            <tr key={p._id || index} className="hover:bg-[#252236] transition-colors group">
+                            <tr key={p._id || index} className="hover:bg-[#252236] transition-colors group cursor-pointer" onClick={() => setViewParticipant(p)}>
                               <td className="p-5 text-gray-500 font-mono text-sm">{filteredParticipants.length - index}</td>
                               <td className="p-5">
                                  <div className="inline-flex items-center justify-center px-2.5 py-1 rounded-lg bg-[#13111C] border border-gray-700 text-purple-300 font-mono text-sm font-bold shadow-sm">
@@ -265,7 +276,11 @@ export default function TeamsPage() {
                   <div className="md:hidden flex flex-col gap-3 p-1">
                           <>
                             {displayedParticipants.map((p: any, index: number) => (
-                                    <div key={p._id || index} className="bg-[#13111C] rounded-xl p-4 border border-[#2D283E] flex items-center justify-between shadow-sm relative overflow-hidden">
+                                    <div
+                                      key={p._id || index}
+                                      onClick={() => setViewParticipant(p)}
+                                      className="bg-[#13111C] rounded-xl p-4 border border-[#2D283E] flex items-center justify-between shadow-sm relative overflow-hidden cursor-pointer hover:border-purple-500/40 transition-colors"
+                                    >
                                          {/* Content */}
                                         <div className="flex flex-col gap-1 z-10 relative max-w-[70%]">
                                              <div className="flex items-center gap-2 mb-1">
@@ -318,6 +333,98 @@ export default function TeamsPage() {
                   </div>
               </div>
             </div>
+        </div>
+      )}
+
+      {/* Participant Programs Modal */}
+      {viewParticipant && (
+        <div
+          className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"
+          onClick={() => setViewParticipant(null)}
+        >
+          <div
+            className="bg-[#1E1B2E] border border-[#2D283E] rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4 duration-300"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-purple-900/40 to-indigo-900/40 p-6 flex items-center gap-4 border-b border-[#2D283E]">
+              {/* Avatar */}
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-xl font-black text-white shadow-lg flex-shrink-0 relative overflow-hidden">
+                <span className="z-10">{viewParticipant.name.charAt(0)}</span>
+                <img
+                  src={`${API_BASE_URL}/participants/${viewParticipant._id}/photo`}
+                  alt={viewParticipant.name}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  onError={e => { e.currentTarget.style.display = 'none'; }}
+                />
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <h3 className="text-xl font-bold text-white truncate">{viewParticipant.name}</h3>
+                <div className="flex items-center gap-2 mt-1 flex-wrap">
+                  <span className="font-mono text-purple-300 text-xs bg-black/30 px-2 py-0.5 rounded border border-purple-500/20">
+                    #{viewParticipant.chestNumber}
+                  </span>
+                  {viewParticipant.groupId?.name && (
+                    <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded border ${
+                      viewParticipant.groupId.name === 'Senior' ? 'text-blue-400 border-blue-500/20 bg-blue-500/10' :
+                      viewParticipant.groupId.name === 'Junior' ? 'text-green-400 border-green-500/20 bg-green-500/10' :
+                      'text-orange-400 border-orange-500/20 bg-orange-500/10'
+                    }`}>
+                      {viewParticipant.groupId.name}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <button
+                onClick={() => setViewParticipant(null)}
+                className="text-gray-500 hover:text-white transition-colors p-1.5 hover:bg-white/5 rounded-lg flex-shrink-0"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Programs List */}
+            <div className="p-6">
+              <h4 className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-4 flex items-center gap-2">
+                <span className="w-4 h-px bg-gray-700"></span>
+                Assigned Programs ({viewParticipant.programs?.length || 0})
+                <span className="flex-1 h-px bg-gray-700"></span>
+              </h4>
+
+              {viewParticipant.programs?.length > 0 ? (
+                <div className="space-y-2 max-h-[55vh] overflow-y-auto custom-scrollbar pr-1">
+                  {viewParticipant.programs.map((prog: any, i: number) => {
+                    const lang = prog.language?.toLowerCase();
+                    const langStyle =
+                      lang === 'arabic'    ? { bg: 'bg-green-500/10',  text: 'text-green-400',  border: 'border-green-500/20',  dot: 'bg-green-400'  } :
+                      lang === 'english'   ? { bg: 'bg-blue-500/10',   text: 'text-blue-400',   border: 'border-blue-500/20',   dot: 'bg-blue-400'   } :
+                      lang === 'malayalam' ? { bg: 'bg-orange-500/10', text: 'text-orange-400', border: 'border-orange-500/20', dot: 'bg-orange-400' } :
+                      lang === 'urdu'      ? { bg: 'bg-purple-500/10', text: 'text-purple-400', border: 'border-purple-500/20', dot: 'bg-purple-400' } :
+                                            { bg: 'bg-gray-700/40',   text: 'text-gray-300',   border: 'border-gray-600',      dot: 'bg-gray-400'   };
+                    return (
+                      <div
+                        key={prog._id || i}
+                        className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${langStyle.bg} ${langStyle.border}`}
+                      >
+                        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${langStyle.dot}`}></span>
+                        <span className="font-semibold text-white flex-1 truncate">{prog.name}</span>
+                        <span className={`text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded border ${langStyle.border} ${langStyle.bg} ${langStyle.text}`}>
+                          {prog.language}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-10 text-gray-600">
+                  <Trophy size={36} className="opacity-20 mb-3" />
+                  <p className="text-sm">No programs assigned yet.</p>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

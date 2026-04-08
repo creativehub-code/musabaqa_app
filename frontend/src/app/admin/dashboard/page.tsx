@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { apiRequest } from '@/lib/api';
-import { Users, Award, Calendar, List, X, Filter, BarChart3, TrendingUp, ChevronRight, Activity } from 'lucide-react';
+import { Users, Award, Medal, Calendar, List, X, Filter, BarChart3, TrendingUp, ChevronRight, Activity, Crown, Star, Eye, EyeOff, ChevronDown } from 'lucide-react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -25,12 +25,17 @@ ChartJS.register(
 );
 
 export default function AdminDashboard() {
-  const { programs, teams, groups, refreshPrograms, loading } = useAdminData();
+  const { programs, teams, groups, participants, refreshPrograms, loading } = useAdminData();
   const [participantCount, setParticipantCount] = useState(0);
   
   // Local state for UI
   const [selectedLanguage, setSelectedLanguage] = useState('All');
   const [isProgramsVisible, setIsProgramsVisible] = useState(true);
+  // Leaderboard filters
+  const [leaderboardGroup, setLeaderboardGroup] = useState('All');
+  const [leaderboardSort, setLeaderboardSort]   = useState<'desc'|'asc'|'az'>('desc');
+  const [showLeaderboardFilter, setShowLeaderboardFilter] = useState(false);
+  const [showLeaderboard, setShowLeaderboard]   = useState(true);
 
   const languages = ['All', 'Malayalam', 'Arabic', 'Urdu', 'English'];
 
@@ -61,6 +66,21 @@ export default function AdminDashboard() {
     const matchesLanguage = selectedLanguage === 'All' || (p.language || 'English') === selectedLanguage;
     return matchesStatus && matchesLanguage;
   });
+
+  // Compute top 10 participants with group filter + sort
+  const leaderboardGroupNames = ['All', ...groups.map((g: any) => g.name)];
+
+  const top10Participants = [...participants]
+    .filter(p => (p.totalScore || 0) > 0)
+    .filter(p => leaderboardGroup === 'All' || p.groupId?.name === leaderboardGroup)
+    .sort((a, b) => {
+      if (leaderboardSort === 'desc') return (b.totalScore || 0) - (a.totalScore || 0);
+      if (leaderboardSort === 'asc')  return (a.totalScore || 0) - (b.totalScore || 0);
+      return a.name.localeCompare(b.name); // az
+    })
+    .slice(0, 10);
+
+  const maxScore = top10Participants.reduce((m, p) => Math.max(m, p.totalScore || 0), 1);
 
   const chartData = {
     labels: teams.map(t => t.name),
@@ -197,6 +217,181 @@ export default function AdminDashboard() {
            </div>
         </div>
       </div>
+
+      {/* ── Top 10 Participants Leaderboard ── */}
+      <div className="bg-[#111827] border border-gray-800 rounded-2xl shadow-xl overflow-hidden">
+        {/* Header */}
+        <div className="p-6 border-b border-gray-800">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <span className="text-2xl">🏆</span> Top 10 Participants
+              </h2>
+              <p className="text-sm text-gray-400 mt-0.5">Ranked by total competition points earned</p>
+            </div>
+
+            {/* Controls */}
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Sort dropdown */}
+              <select
+                value={leaderboardSort}
+                onChange={e => setLeaderboardSort(e.target.value as any)}
+                className="bg-[#0F0D15] border border-gray-700 text-gray-300 text-xs rounded-lg px-3 py-2 focus:outline-none focus:border-purple-500 cursor-pointer"
+              >
+                <option value="desc">↓ Highest First</option>
+                <option value="asc">↑ Lowest First</option>
+                <option value="az">A–Z Name</option>
+              </select>
+
+              {/* Filter toggle button */}
+              <button
+                onClick={() => setShowLeaderboardFilter(f => !f)}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border transition-all ${
+                  leaderboardGroup !== 'All'
+                    ? 'bg-purple-500/20 text-purple-300 border-purple-500/50'
+                    : 'bg-[#0F0D15] text-gray-400 border-gray-700 hover:border-gray-500 hover:text-white'
+                }`}
+              >
+                <Filter size={14} />
+                {leaderboardGroup !== 'All' ? leaderboardGroup : 'Group'}
+              </button>
+
+              {/* Clear filter */}
+              {leaderboardGroup !== 'All' && (
+                <button
+                  onClick={() => setLeaderboardGroup('All')}
+                  className="flex items-center gap-1 px-2 py-2 rounded-lg text-xs text-gray-500 hover:text-red-400 border border-gray-700 hover:border-red-500/50 transition-all"
+                  title="Clear group filter"
+                >
+                  <X size={14} />
+                </button>
+              )}
+
+              <span className="text-xs font-semibold text-purple-300 bg-purple-500/10 border border-purple-500/20 px-3 py-2 rounded-lg">
+                {top10Participants.length} shown
+              </span>
+
+              {/* Show / Hide toggle */}
+              <button
+                onClick={() => setShowLeaderboard(v => !v)}
+                title={showLeaderboard ? 'Hide participants' : 'Show participants'}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border border-gray-700 bg-[#0F0D15] text-gray-400 hover:text-white hover:border-gray-500 transition-all"
+              >
+                {showLeaderboard ? <EyeOff size={14} /> : <Eye size={14} />}
+                {showLeaderboard ? 'Hide' : 'Show'}
+              </button>
+            </div>
+          </div>
+
+          {/* Group filter pills — toggles on filter button click */}
+          {showLeaderboardFilter && (
+            <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-800">
+              <span className="text-xs text-gray-500 self-center mr-1">Filter by Group:</span>
+              {leaderboardGroupNames.map(g => (
+                <button
+                  key={g}
+                  onClick={() => { setLeaderboardGroup(g); setShowLeaderboardFilter(false); }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                    leaderboardGroup === g
+                      ? 'bg-purple-600 text-white border-purple-500 shadow-md shadow-purple-900/30'
+                      : 'bg-[#0F0D15] text-gray-400 border-gray-700 hover:border-purple-500/50 hover:text-purple-300'
+                  }`}
+                >
+                  {g}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {showLeaderboard && (
+          top10Participants.length === 0 ? (
+            <div className="p-12 text-center text-gray-500 flex flex-col items-center gap-3">
+              <Award size={48} className="opacity-20" />
+              <p>No ranked participants yet. Scores will appear after programs are calculated.</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-800/50">
+              {top10Participants.map((p: any, index: number) => {
+                const scorePercent = ((p.totalScore || 0) / maxScore) * 100;
+                const medal =
+                  index === 0 ? { emoji: '🥇', color: 'text-yellow-400', bg: 'bg-yellow-500/10 border-yellow-500/30' } :
+                  index === 1 ? { emoji: '🥈', color: 'text-gray-300', bg: 'bg-gray-300/10 border-gray-300/30' } :
+                  index === 2 ? { emoji: '🥉', color: 'text-amber-600', bg: 'bg-amber-700/10 border-amber-700/30' } :
+                                { emoji: null, color: 'text-gray-500', bg: 'bg-gray-800 border-gray-700/50' };
+                return (
+                  <div
+                    key={p._id}
+                    className={`flex items-center gap-4 p-4 px-6 hover:bg-white/5 transition-all group ${
+                      index < 3 ? 'bg-gradient-to-r from-white/[0.02] to-transparent' : ''
+                    }`}
+                  >
+                    {/* Rank Badge */}
+                    <div className={`flex items-center justify-center w-9 h-9 rounded-full font-bold text-sm shrink-0 border ${medal.bg} ${medal.color}`}>
+                      {medal.emoji ? <span className="text-lg">{medal.emoji}</span> : index + 1}
+                    </div>
+
+                    {/* Participant Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold text-white truncate">{p.name}</span>
+                        <span className="text-xs font-mono text-gray-500 bg-gray-800 px-1.5 py-0.5 rounded border border-gray-700">#{p.chestNumber}</span>
+                      </div>
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        {p.teamId?.name && (
+                          <span className="text-xs text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded-full">
+                            {p.teamId.name}
+                          </span>
+                        )}
+                        {p.groupId?.name && (
+                          <span className="text-xs text-purple-400 bg-purple-500/10 border border-purple-500/20 px-2 py-0.5 rounded-full">
+                            {p.groupId.name}
+                          </span>
+                        )}
+                      </div>
+                      {/* Score bar */}
+                      <div className="mt-2 h-1.5 w-full bg-gray-800 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-700 ${
+                            index === 0 ? 'bg-gradient-to-r from-yellow-500 to-amber-400' :
+                            index === 1 ? 'bg-gradient-to-r from-gray-400 to-gray-300' :
+                            index === 2 ? 'bg-gradient-to-r from-amber-700 to-amber-500' :
+                            'bg-gradient-to-r from-purple-600 to-indigo-500'
+                          }`}
+                          style={{ width: `${scorePercent}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Score */}
+                    <div className={`text-right shrink-0 font-bold text-xl tabular-nums ${
+                      index === 0 ? 'text-yellow-400' :
+                      index === 1 ? 'text-gray-300' :
+                      index === 2 ? 'text-amber-500' :
+                      'text-purple-400'
+                    }`}>
+                      {p.totalScore}
+                      <span className="text-xs text-gray-500 font-normal ml-1">pts</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )
+        )}
+
+        {/* Collapsed indicator */}
+        {!showLeaderboard && (
+          <div
+            onClick={() => setShowLeaderboard(true)}
+            className="flex items-center justify-center gap-2 py-4 text-gray-600 hover:text-gray-400 cursor-pointer transition-colors text-sm select-none"
+          >
+            <ChevronDown size={16} />
+            Click to show {top10Participants.length} participants
+          </div>
+        )}
+      </div>
+
 
       <div className="bg-[#111827] border border-gray-800 rounded-2xl shadow-xl overflow-hidden mb-20 md:mb-0 max-w-full">
         <div className="p-6 border-b border-gray-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">

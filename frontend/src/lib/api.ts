@@ -1,43 +1,41 @@
-const getBaseUrl = () => {
-  // Use the environment variable if available, otherwise fallback to localhost for development
-  let url = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-  
-  if (!url.startsWith('http')) {
-    url = `https://${url}`;
-  }
-  return url.replace(/\/$/, ''); // Remove trailing slash if present
-};
+import axiosInstance from './axiosInstance';
 
-export const API_BASE_URL = getBaseUrl();
-console.log(`API Base URL: ${API_BASE_URL}`);
+/**
+ * Get the base API URL from the Axios configuration
+ */
+export const API_BASE_URL = axiosInstance.defaults.baseURL;
 
+/**
+ * Global API request utility using Axios
+ * Automatically handles Bearer tokens and 401 redirects via axiosInstance interceptors.
+ * 
+ * @param endpoint - The API endpoint (e.g., '/auth/login')
+ * @param method - HTTP Method (GET, POST, PUT, DELETE, PATCH)
+ * @param body - Optional request payload
+ * @returns - The JSON response data
+ */
 export const apiRequest = async (endpoint: string, method: string = 'GET', body?: any) => {
-  const headers: any = {
-    'Content-Type': 'application/json',
-  };
+  try {
+    const config = {
+      url: endpoint,
+      method,
+      data: body,
+    };
 
-  const fullUrl = `${API_BASE_URL}${endpoint}`;
-  console.log(`Making request to: ${fullUrl} [${method}]`);
-
-  const response = await fetch(fullUrl, {
-    method,
-    headers,
-    credentials: 'include',
-    body: body ? JSON.stringify(body) : undefined,
-    cache: 'no-store', // Disable caching completely for judge isolation and dynamic data
-  });
-
-  if (!response.ok) {
-    const text = await response.text();
-    console.error('API Error Status:', response.status);
-    console.error('API Error Body:', text);
-    try {
-      const errorData = JSON.parse(text);
-      throw new Error(errorData.message || 'API request failed');
-    } catch (e) {
-      throw new Error(`API Error ${response.status}: ${text.slice(0, 100)}`);
+    const response = await axiosInstance(config);
+    return response.data;
+  } catch (error: any) {
+    // Extract error message for consistency with the previous fetch implementation
+    const message = error.response?.data?.message || error.message || 'API request failed';
+    
+    // Log error for debugging (matches previous behavior)
+    if (error.response) {
+      console.error('API Error Status:', error.response.status);
+      console.error('API Error Body:', error.response.data);
+    } else {
+      console.error('API Network Error:', error.message);
     }
-  }
 
-  return response.json();
+    throw new Error(message);
+  }
 };
