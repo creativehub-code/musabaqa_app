@@ -1,5 +1,6 @@
 const Judge = require("../models/Judge");
 const Program = require("../models/Program");
+const JudgeMark = require("../models/JudgeMark");
 
 // @desc    Get all judges
 // @route   GET /api/judges
@@ -26,6 +27,9 @@ const getMe = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
     
+    // Find programs for which this judge has already submitted marks
+    const evaluatedPrograms = await JudgeMark.find({ judgeId: req.user.id }).distinct('programId');
+    
     res.json({
       _id: judge._id,
       name: judge.name,
@@ -37,6 +41,7 @@ const getMe = async (req, res) => {
         ? judge.judgeGroupId.assignedPrograms
         : [],
       judgeGroupId: judge.judgeGroupId ? judge.judgeGroupId._id : null,
+      evaluatedPrograms: evaluatedPrograms || [],
     });
   } catch (error) {
     res.status(500).json({ message: "Internal server error" });

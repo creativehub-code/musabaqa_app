@@ -42,7 +42,8 @@ function MarkingInterface({ programIdParam }: { programIdParam: any }) {
         // Fetch ALL participants for MVP (Assuming small scale)
         const parts = await apiRequest('/participants');
         const progs = await apiRequest('/programs');
-        const allMarks = await apiRequest(`/marks/${programId}`);
+        const markData = await apiRequest(`/marks/${programId}`);
+        const allMarks = markData.marks || [];
         
         const currentProg = progs.find((p: any) => p._id === programId);
         setProgram(currentProg);

@@ -14,6 +14,7 @@ export default function JudgeDashboard() {
   const [activeTab, setActiveTab] = useState<'programs' | 'participants'>('programs');
   const [isGroupOpen, setIsGroupOpen] = useState(false);
   const [judgeCategory, setJudgeCategory] = useState('');
+  const [evaluatedProgramIds, setEvaluatedProgramIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const fetchData = async () => {
@@ -27,9 +28,11 @@ export default function JudgeDashboard() {
 
           if (user._id) {
             // Always fetch fresh judge data — gets category, assignedPrograms
-            const liveJudgeData = await apiRequest('/judges/me/' + user._id);
+            const liveJudgeData = await apiRequest('/judges/me');
             assignedIds = (liveJudgeData.assignedPrograms || []).map((p: any) => typeof p === 'object' ? p._id : p);
             category = liveJudgeData.category || user.category || '';
+            const ev = new Set<string>((liveJudgeData.evaluatedPrograms || []).map((id: any) => id.toString()));
+            setEvaluatedProgramIds(ev);
 
             // Save the fresh data back (preserving all fields)
             localStorage.setItem('user', JSON.stringify({
@@ -176,24 +179,34 @@ export default function JudgeDashboard() {
       ) : activeTab === 'programs' ? (
         /* ─── Programs Grid ─── */
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredPrograms.map((program) => (
+          {filteredPrograms.map((program) => {
+            const isEvaluated = evaluatedProgramIds.has(program._id);
+            return (
             <Link
               key={program._id}
-              href={"/judge/program/" + program._id}
-              className="group relative overflow-hidden bg-[#1E1B2E] rounded-2xl border border-[#2D283E] hover:border-purple-500/50 transition-all duration-300 hover:shadow-2xl hover:shadow-purple-900/20"
+              href={isEvaluated ? "#" : "/judge/program/" + program._id}
+              onClick={(e) => { if (isEvaluated) e.preventDefault(); }}
+              className={`group relative overflow-hidden bg-[#1E1B2E] rounded-2xl border border-[#2D283E] transition-all duration-300 ${isEvaluated ? 'opacity-80 cursor-default' : 'hover:border-purple-500/50 hover:shadow-2xl hover:shadow-purple-900/20'}`}
             >
               <div className="absolute inset-0 bg-gradient-to-br from-purple-900/0 group-hover:via-purple-900/10 group-hover:to-purple-900/20 transition-all duration-500" />
               <div className="relative p-6 flex flex-col h-full">
                 <div className="flex justify-between items-start mb-4">
-                  <div className="p-3 rounded-xl bg-[#13111C] border border-[#2D283E] group-hover:border-purple-500/30 group-hover:scale-110 transition-all duration-300">
+                  <div className={`p-3 rounded-xl bg-[#13111C] border border-[#2D283E] transition-all duration-300 ${isEvaluated ? '' : 'group-hover:border-purple-500/30 group-hover:scale-110'}`}>
                     <Layers size={20} className="text-purple-400" />
                   </div>
-                  <div className="flex items-center gap-1 text-xs font-bold text-gray-500 bg-[#13111C] px-2 py-1 rounded-lg border border-[#2D283E]">
-                    <span>MAX</span><span className="text-white">{program.maxMarks}</span>
+                  <div className="flex gap-2">
+                     {isEvaluated && (
+                        <div className="flex items-center gap-1 text-xs font-bold text-green-400 bg-green-400/10 px-2 py-1 rounded-lg border border-green-400/20">
+                          <Check size={10} strokeWidth={3} /><span>SUBMITTED</span>
+                        </div>
+                     )}
+                     <div className="flex items-center gap-1 text-xs font-bold text-gray-500 bg-[#13111C] px-2 py-1 rounded-lg border border-[#2D283E]">
+                       <span>MAX</span><span className="text-white">{program.maxMarks}</span>
+                     </div>
                   </div>
                 </div>
                 <div className="mb-4 flex-1">
-                  <h3 className="text-lg font-bold text-white mb-2 group-hover:text-purple-300 transition-colors">{program.name}</h3>
+                  <h3 className={`text-lg font-bold text-white mb-2 transition-colors ${isEvaluated ? '' : 'group-hover:text-purple-300'}`}>{program.name}</h3>
                   <div className="flex flex-wrap gap-2">
                     {program.language && (
                       <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-blue-500/5 text-blue-400 border border-blue-500/10 text-[10px] font-bold uppercase tracking-wider">
@@ -208,14 +221,20 @@ export default function JudgeDashboard() {
                   </div>
                 </div>
                 <div className="flex items-center justify-between pt-4 border-t border-[#2D283E] mt-auto">
-                  <span className="text-xs text-gray-400 font-medium group-hover:text-gray-300">Tap to Evaluate</span>
-                  <div className="p-1.5 rounded-full bg-white/5 text-gray-400 group-hover:bg-purple-500 group-hover:text-white transition-all transform group-hover:-rotate-45">
-                    <ChevronRight size={16} />
-                  </div>
+                  {isEvaluated ? (
+                      <span className="text-xs text-gray-500 font-medium tracking-wide">Evaluation Completed</span>
+                  ) : (
+                      <>
+                        <span className="text-xs text-gray-400 font-medium group-hover:text-gray-300">Tap to Evaluate</span>
+                        <div className="p-1.5 rounded-full bg-white/5 text-gray-400 group-hover:bg-purple-500 group-hover:text-white transition-all transform group-hover:-rotate-45">
+                          <ChevronRight size={16} />
+                        </div>
+                      </>
+                  )}
                 </div>
               </div>
             </Link>
-          ))}
+          )})}
           {filteredPrograms.length === 0 && (
             <div className="col-span-full text-center py-16 bg-[#1E1B2E] rounded-3xl border border-dashed border-[#2D283E]">
               <Search size={24} className="mx-auto mb-3 text-gray-600" />
